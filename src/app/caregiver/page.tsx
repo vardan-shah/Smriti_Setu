@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Home, AlertCircle, CheckCircle2, Clock, Calendar, TrendingDown, Suspense } from "lucide-react";
+import { Home, AlertCircle, CheckCircle2, Clock, Calendar, TrendingDown} from "lucide-react";
+import { Suspense } from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 const data = [
