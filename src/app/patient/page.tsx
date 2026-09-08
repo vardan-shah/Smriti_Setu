@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Coffee, Music, TreePine, Mountain, Moon, Sun, Home as HomeIcon, Droplet, Pill, Volume2, Wifi, WifiOff, RefreshCcw } from "lucide-react";
+import { Coffee, Music, TreePine, Mountain, Moon, Sun, Home as HomeIcon, Droplet, Pill, Volume2, Wifi, WifiOff, RefreshCcw, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { saveSessionLocally } from "../utils/db";
 import { translations, Language } from "../../i18n/translations";
@@ -17,7 +17,7 @@ const CARDS = [
   { icon: Moon, key: "night", color: "bg-indigo-100 text-indigo-700" },
 ];
 
-function BrainIcon(props: any) {
+function BrainIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/>
@@ -40,6 +40,7 @@ export default function PatientView() {
     if (typeof window !== "undefined") {
       const urlLang = new URLSearchParams(window.location.search).get("lang");
       if (urlLang && translations[urlLang as Language]) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLang(urlLang as Language);
       }
     }
@@ -56,7 +57,7 @@ export default function PatientView() {
   const [flipped, setFlipped] = useState<number[]>([]);
   const [matched, setMatched] = useState<string[]>([]);
   const [win, setWin] = useState(false);
-  const [isOnline, setIsOnline] = useState(true);
+  const [isOnline, setIsOnline] = useState(() => typeof navigator !== "undefined" ? navigator.onLine : true);
   const [offlineMode, setOfflineMode] = useState(false);
   const [voiceState, setVoiceState] = useState<'idle' | 'playing' | 'unavailable'>('idle');
   const [startTime, setStartTime] = useState<number>(0);
@@ -73,9 +74,6 @@ export default function PatientView() {
   }, []);
 
   useEffect(() => {
-    if (typeof navigator !== "undefined") {
-      setIsOnline(navigator.onLine);
-    }
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
     window.addEventListener("online", handleOnline);
@@ -86,7 +84,9 @@ export default function PatientView() {
     }
 
     // Safely shuffle cards only on client to avoid hydration mismatch
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     initializeGame();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsReady(true);
 
     return () => {
@@ -98,9 +98,18 @@ export default function PatientView() {
   const handleVoice = (key: string, text: string) => {
     if (voiceState === 'playing') return;
     setVoiceState('playing');
-    playVoicePrompt(lang, key, text, 
+    playVoicePrompt(
+      lang, 
+      key, 
+      text, 
+      offlineMode,
       () => setVoiceState('playing'), 
-      () => setVoiceState('idle')
+      () => setVoiceState('idle'),
+      () => {
+        setVoiceState('unavailable');
+        // Clear unavailable state after 3 seconds
+        setTimeout(() => setVoiceState('idle'), 3000);
+      }
     );
   };
 
@@ -210,6 +219,13 @@ export default function PatientView() {
               {t.matches || "Matches"}: {matched.length} / {CARDS.length}
             </div>
           </div>
+
+          {voiceState === 'unavailable' && (
+            <div className="w-full mb-6 p-4 bg-rose-100 border border-rose-200 text-rose-700 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4">
+              <AlertCircle className="w-6 h-6 shrink-0" />
+              <span className="font-medium text-lg">{t.voiceNotAvailable || "Voice not available for this language"}</span>
+            </div>
+          )}
 
           {win ? (
             <div className="text-center space-y-8 py-12 animate-in fade-in zoom-in duration-500 w-full flex flex-col items-center">

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { OfflineIndicator } from "../components/OfflineIndicator";
+import { RegisterSW } from "../components/RegisterSW";
 
 const inter = localFont({ src: "../../public/fonts/Inter-Regular.woff2" });
 
@@ -30,6 +31,7 @@ export default function RootLayout({
       <body className={inter.className}>
         {children}
         <OfflineIndicator />
+        <RegisterSW />
       </body>
     </html>
   );
