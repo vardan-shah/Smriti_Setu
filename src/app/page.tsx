@@ -3,9 +3,13 @@
 import Link from "next/link";
 import { Brain, LineChart, Globe } from "lucide-react";
 import { useState } from "react";
+import { translations, Language } from "../i18n/translations";
+import { useDocumentLanguage } from "../i18n/language";
 
 export default function Home() {
-  const [lang, setLang] = useState("English");
+  const [lang, setLang] = useState<Language>("English");
+  useDocumentLanguage(lang);
+  const t = translations[lang];
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-8 font-sans">
@@ -13,7 +17,7 @@ export default function Home() {
         <Globe className="w-5 h-5 text-slate-500" />
         <select 
           value={lang}
-          onChange={(e) => setLang(e.target.value)}
+          onChange={(e) => setLang(e.target.value as Language)}
           className="bg-transparent text-slate-700 font-bold focus:outline-none cursor-pointer"
         >
           <option value="English">English</option>
@@ -25,12 +29,12 @@ export default function Home() {
 
       <div className="max-w-3xl w-full text-center space-y-12 mt-12">
         <div className="space-y-4">
-          <h1 className="text-5xl font-extrabold text-slate-900 tracking-tight">Smriti<span className="text-emerald-600">Setu</span></h1>
+          <h1 className="text-5xl font-extrabold text-slate-900 tracking-tight">{t.appTitle}</h1>
           <p className="text-xl text-slate-600 font-medium">
-            AI-Based Cognitive Gaming & Memory Assistance Platform for the North Eastern Region
+            {t.appSubtitle}
           </p>
           <p className="text-md text-slate-500 max-w-2xl mx-auto bg-slate-100 p-4 rounded-xl border border-slate-200">
-            <strong>Official SIH 26003 Demo:</strong> Voice-enabled multilingual interface, adaptive gaming, offline sync, and caregiver monitoring tailored for elderly dementia patients in NER.
+            {t.appDesc}
           </p>
         </div>
 
@@ -41,10 +45,10 @@ export default function Home() {
             <div className="absolute inset-0 bg-emerald-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             <Brain className="w-24 h-24 text-emerald-600 mb-6 relative z-10 group-hover:scale-110 transition-transform duration-300" />
             <h2 className="text-3xl font-bold text-slate-800 relative z-10">
-              {lang === "Assamese" ? "ৰোগীৰ দৰ্শন" : lang === "Bengali" ? "রোগীর দৃশ্য" : lang === "Hindi" ? "रोगी दृश्य" : "Patient View"}
+              {t.patientView}
             </h2>
             <p className="text-slate-500 mt-4 relative z-10 text-lg">
-              Start the culturally adaptive cognitive matching game.
+              {t.patientDesc}
             </p>
           </Link>
 
@@ -54,17 +58,17 @@ export default function Home() {
             <div className="absolute inset-0 bg-indigo-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             <LineChart className="w-24 h-24 text-indigo-600 mb-6 relative z-10 group-hover:scale-110 transition-transform duration-300" />
             <h2 className="text-3xl font-bold text-slate-800 relative z-10">
-              {lang === "Assamese" ? "তত্ত্বাৱধায়কৰ দৰ্শন" : lang === "Bengali" ? "পরিচর্যাকারীর দৃশ্য" : lang === "Hindi" ? "देखभालकर्ता दृश्य" : "Caregiver View"}
+              {t.caregiverView}
             </h2>
             <p className="text-slate-500 mt-4 relative z-10 text-lg">
-              View engagement trends, insights, and offline sync logs.
+              {t.caregiverDesc}
             </p>
           </Link>
         </div>
         
         <div className="pt-8">
           <p className="text-sm text-slate-400 font-medium tracking-wide uppercase">
-            Team AlgoNauts | SIH 26003 | MDoNER
+            {t.footer}
           </p>
         </div>
       </div>
