@@ -9,8 +9,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-8 font-sans">
-      
-      {/* LANGUAGE SELECTOR */}
       <div className="absolute top-6 right-6 flex items-center gap-3 bg-white px-4 py-2 rounded-full shadow-sm border border-slate-200">
         <Globe className="w-5 h-5 text-slate-500" />
         <select 
@@ -26,9 +24,8 @@ export default function Home() {
       </div>
 
       <div className="max-w-3xl w-full text-center space-y-12 mt-12">
-        
         <div className="space-y-4">
-          <h1 className="text-5xl font-extrabold text-slate-900 tracking-tight">Memori<span className="text-emerald-600">NER</span></h1>
+          <h1 className="text-5xl font-extrabold text-slate-900 tracking-tight">Smriti<span className="text-emerald-600">Setu</span></h1>
           <p className="text-xl text-slate-600 font-medium">
             AI-Based Cognitive Gaming & Memory Assistance Platform for the North Eastern Region
           </p>
@@ -38,7 +35,6 @@ export default function Home() {
         </div>
 
         <div className="grid md:grid-cols-2 gap-8">
-          
           <Link href={`/patient?lang=${lang}`} 
             className="group relative flex flex-col items-center p-10 bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-300 border-2 border-emerald-100 hover:border-emerald-500 overflow-hidden"
           >
@@ -57,12 +53,13 @@ export default function Home() {
           >
             <div className="absolute inset-0 bg-indigo-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             <LineChart className="w-24 h-24 text-indigo-600 mb-6 relative z-10 group-hover:scale-110 transition-transform duration-300" />
-            <h2 className="text-3xl font-bold text-slate-800 relative z-10">Caregiver View</h2>
+            <h2 className="text-3xl font-bold text-slate-800 relative z-10">
+              {lang === "Assamese" ? "তত্ত্বাৱধায়কৰ দৰ্শন" : lang === "Bengali" ? "পরিচর্যাকারীর দৃশ্য" : lang === "Hindi" ? "देखभालकर्ता दृश्य" : "Caregiver View"}
+            </h2>
             <p className="text-slate-500 mt-4 relative z-10 text-lg">
               View engagement trends, insights, and offline sync logs.
             </p>
           </Link>
-
         </div>
         
         <div className="pt-8">

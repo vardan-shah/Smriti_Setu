@@ -1,9 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { OfflineIndicator } from "../components/OfflineIndicator";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = localFont({ src: "../../public/fonts/Inter-Regular.woff2" });
 
 export const metadata: Metadata = {
   title: "SmritiSetu",

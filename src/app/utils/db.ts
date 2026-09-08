@@ -3,6 +3,17 @@ import { openDB } from 'idb';
 const DB_NAME = 'SmritiSetu-DB';
 const STORE_NAME = 'game-sessions';
 
+export interface GameSession {
+  id?: number;
+  game: string;
+  matches: number;
+  timeSpent: number;
+  langUsed: string;
+  accuracy: number;
+  timestamp: number;
+  synced: number;
+}
+
 export async function initDB() {
   return openDB(DB_NAME, 1, {
     upgrade(db) {
@@ -14,14 +25,19 @@ export async function initDB() {
   });
 }
 
-export async function saveSessionLocally(data: any) {
+export async function saveSessionLocally(data: Omit<GameSession, 'timestamp' | 'synced'>) {
   const db = await initDB();
-  await db.add(STORE_NAME, { ...data, timestamp: Date.now(), synced: 0 }); // 0 for false, 1 for true
+  await db.add(STORE_NAME, { ...data, timestamp: Date.now(), synced: 0 }); 
 }
 
-export async function getUnsyncedSessions() {
+export async function getUnsyncedSessions(): Promise<GameSession[]> {
   const db = await initDB();
   return db.getAllFromIndex(STORE_NAME, 'synced', 0);
+}
+
+export async function getAllSessions(): Promise<GameSession[]> {
+  const db = await initDB();
+  return db.getAll(STORE_NAME);
 }
 
 export async function markAsSynced(ids: number[]) {
