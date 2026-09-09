@@ -12,6 +12,12 @@ export interface GameSession {
   accuracy: number;
   timestamp: number;
   syncStatus: 'pending' | 'synced' | 'failed';
+  biomarkers?: {
+    avgReactionTimeMs: number;
+    hesitationMs: number;
+    memoryLapses: number;
+    timeOfDay: 'morning' | 'afternoon' | 'evening' | 'night';
+  };
 }
 
 export async function initDB() {

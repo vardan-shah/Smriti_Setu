@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Home, CheckCircle2, Clock, Calendar, TrendingDown, TrendingUp } from "lucide-react";
+import { Home, CheckCircle2, Clock, Calendar, TrendingDown, TrendingUp, Activity } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Suspense, useEffect, useState } from "react";
 import { getAllSessions, GameSession } from "../utils/db";
@@ -100,6 +100,40 @@ function DashboardContent() {
                 </div>
               </div>
             </div>
+
+            {recentSessions.length > 0 && recentSessions[recentSessions.length - 1].biomarkers && (
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+                  <Activity className="w-6 h-6 text-indigo-500"/> Digital Biomarkers (Latest Session)
+                </h2>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <p className="text-sm text-slate-500 font-medium">Avg Reaction Time</p>
+                    <p className="text-xl font-bold text-slate-800">
+                      {(recentSessions[recentSessions.length - 1].biomarkers!.avgReactionTimeMs / 1000).toFixed(1)}s
+                    </p>
+                  </div>
+                  <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <p className="text-sm text-slate-500 font-medium">Hesitation</p>
+                    <p className="text-xl font-bold text-slate-800">
+                      {(recentSessions[recentSessions.length - 1].biomarkers!.hesitationMs / 1000).toFixed(1)}s
+                    </p>
+                  </div>
+                  <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <p className="text-sm text-slate-500 font-medium">Memory Lapses</p>
+                    <p className="text-xl font-bold text-slate-800">
+                      {recentSessions[recentSessions.length - 1].biomarkers!.memoryLapses}
+                    </p>
+                  </div>
+                  <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <p className="text-sm text-slate-500 font-medium">Time of Day</p>
+                    <p className="text-xl font-bold text-slate-800 capitalize">
+                      {recentSessions[recentSessions.length - 1].biomarkers!.timeOfDay}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
               <div className="flex justify-between items-center mb-6">

@@ -64,6 +64,13 @@ export default function PatientView() {
   const [moves, setMoves] = useState(0);
   const [isReady, setIsReady] = useState(false);
 
+  // Digital Biomarkers Tracking
+  const [firstClickTime, setFirstClickTime] = useState<number | null>(null);
+  const [reactionTimes, setReactionTimes] = useState<number[]>([]);
+  const [lastClickTime, setLastClickTime] = useState<number>(0);
+  const [seenCards, setSeenCards] = useState<Set<string>>(new Set());
+  const [memoryLapses, setMemoryLapses] = useState<number>(0);
+
   const initializeGame = useCallback(() => {
     setCards(prev => [...prev].sort(() => Math.random() - 0.5));
     setFlipped([]);
@@ -71,6 +78,13 @@ export default function PatientView() {
     setWin(false);
     setMoves(0);
     setStartTime(Date.now());
+    
+    // Reset biomarkers
+    setFirstClickTime(null);
+    setReactionTimes([]);
+    setLastClickTime(0);
+    setSeenCards(new Set());
+    setMemoryLapses(0);
   }, []);
 
   useEffect(() => {
@@ -86,7 +100,6 @@ export default function PatientView() {
     // Safely shuffle cards only on client to avoid hydration mismatch
     // eslint-disable-next-line react-hooks/set-state-in-effect
     initializeGame();
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsReady(true);
 
     return () => {
@@ -116,7 +129,37 @@ export default function PatientView() {
   const handleCardClick = (index: number) => {
     if (!isReady || flipped.length === 2 || flipped.includes(index) || matched.includes(cards[index].key)) return;
     
-    handleVoice(cards[index].key, t[cards[index].key] || cards[index].key);
+    // eslint-disable-next-line react-hooks/purity
+    const now = Date.now();
+    
+    // Biomarker: Hesitation (time to first click)
+    if (moves === 0 && flipped.length === 0 && !firstClickTime) {
+      setFirstClickTime(now);
+    }
+
+    // Biomarker: Reaction time between any clicks
+    if (lastClickTime > 0) {
+       setReactionTimes(prev => [...prev, now - lastClickTime]);
+    }
+    setLastClickTime(now);
+
+    const cardKey = cards[index].key;
+
+    // Biomarker: Memory Lapses (clicking a previously seen card that doesn't match the currently flipped card)
+    if (flipped.length === 1) {
+       const firstCardKey = cards[flipped[0]].key;
+       if (firstCardKey !== cardKey && seenCards.has(cardKey)) {
+          setMemoryLapses(prev => prev + 1);
+       }
+    }
+    
+    setSeenCards(prev => {
+      const next = new Set(prev);
+      next.add(cardKey);
+      return next;
+    });
+
+    handleVoice(cardKey, t[cardKey] || cardKey);
 
     const newFlipped = [...flipped, index];
     setFlipped(newFlipped);
@@ -131,17 +174,31 @@ export default function PatientView() {
           const newMatched = [...prev, first.key];
           if (newMatched.length === CARDS.length) {
             setWin(true);
-            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const elapsed = Math.floor((now - startTime) / 1000);
             const perfectMoves = CARDS.length;
             const actualMoves = moves + 1;
             const accuracy = Math.round((perfectMoves / actualMoves) * 100);
             
+            // Calculate final biomarkers
+            const hour = new Date().getHours();
+            const timeOfDay = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : hour < 21 ? 'evening' : 'night';
+            const hesitationMs = firstClickTime ? (firstClickTime - startTime) : 0;
+            const avgReactionTimeMs = reactionTimes.length > 0 
+                ? Math.round(reactionTimes.reduce((a, b) => a + b, 0) / reactionTimes.length) 
+                : 0;
+
             saveSessionLocally({ 
               game: "matching", 
               matches: CARDS.length, 
               timeSpent: elapsed, 
               langUsed: lang,
-              accuracy: accuracy > 100 ? 100 : accuracy
+              accuracy: accuracy > 100 ? 100 : accuracy,
+              biomarkers: {
+                avgReactionTimeMs,
+                hesitationMs,
+                memoryLapses,
+                timeOfDay
+              }
             }).catch(console.error);
             
             setTimeout(() => handleVoice('greatJob', t.greatJob), 500);
