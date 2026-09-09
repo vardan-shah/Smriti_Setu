@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Coffee, Music, TreePine, Mountain, Moon, Sun, Home as HomeIcon, Droplet, Pill, Volume2, Wifi, WifiOff, RefreshCcw, AlertCircle, CloudRain, Flower2 } from "lucide-react";
 import Link from "next/link";
 import { saveSessionLocally } from "../utils/db";
@@ -62,11 +62,12 @@ export default function PatientView() {
   const [flipped, setFlipped] = useState<number[]>([]);
   const [matched, setMatched] = useState<string[]>([]);
   const [win, setWin] = useState(false);
-  const [isOnline, setIsOnline] = useState(() => typeof navigator !== "undefined" ? navigator.onLine : true);
+  const [isOnline, setIsOnline] = useState(true);
   const [offlineMode, setOfflineMode] = useState(false);
   const [voiceState, setVoiceState] = useState<'idle' | 'playing' | 'unavailable'>('idle');
   const [startTime, setStartTime] = useState<number>(0);
   const [moves, setMoves] = useState(0);
+  const movesRef = useRef(0);
   const [isReady, setIsReady] = useState(false);
 
   // Digital Biomarkers Tracking
@@ -84,6 +85,7 @@ export default function PatientView() {
     setMatched([]);
     setWin(false);
     setMoves(0);
+    movesRef.current = 0;
     setStartTime(Date.now());
     
     // Reset biomarkers
@@ -95,6 +97,7 @@ export default function PatientView() {
   }, []);
 
   useEffect(() => {
+    if (typeof navigator !== "undefined") setIsOnline(navigator.onLine);
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
     window.addEventListener("online", handleOnline);
@@ -122,10 +125,9 @@ export default function PatientView() {
           
           setDifficulty(newDiff);
           // Only auto-update board if user hasn't started playing yet
-          setMoves(m => {
-             if (m === 0) initializeGame(newDiff);
-             return m;
-          });
+          if (movesRef.current === 0) {
+             initializeGame(newDiff);
+          }
         }
       });
     });
@@ -193,7 +195,10 @@ export default function PatientView() {
     setFlipped(newFlipped);
 
     if (newFlipped.length === 2) {
-      setMoves(m => m + 1);
+      setMoves(m => {
+        movesRef.current = m + 1;
+        return m + 1;
+      });
       const first = cards[newFlipped[0]];
       const second = cards[newFlipped[1]];
       

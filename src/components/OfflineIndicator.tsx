@@ -6,7 +6,7 @@ import { translations, Language } from "../i18n/translations";
 
 
 export function OfflineIndicator() {
-  const [isOnline, setIsOnline] = useState(() => typeof navigator !== "undefined" ? navigator.onLine : true);
+  const [isOnline, setIsOnline] = useState(true);
   const [pendingCount, setPendingCount] = useState(0);
   const [syncState, setSyncState] = useState<'idle' | 'syncing' | 'synced' | 'failed'>('idle');
 
@@ -27,6 +27,7 @@ export function OfflineIndicator() {
   const t = translations[lang];
 
   useEffect(() => {
+    if (typeof navigator !== "undefined") setIsOnline(navigator.onLine);
     const handleOnline = async () => {
       setIsOnline(true);
       const pending = await getPendingSessions();

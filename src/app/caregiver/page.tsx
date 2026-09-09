@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { Home, CheckCircle2, Clock, Calendar, TrendingDown, TrendingUp, Activity, AlertOctagon } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Suspense, useEffect, useState } from "react";
@@ -10,9 +9,17 @@ import { translations, Language } from "../../i18n/translations";
 import { useDocumentLanguage } from "../../i18n/language";
 
 function DashboardContent() {
-  const searchParams = useSearchParams();
-  const langParam = (searchParams.get("lang") as Language) || "English";
-  const lang = translations[langParam] ? langParam : "English";
+  const [lang, setLang] = useState<Language>("English");
+  
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const urlLang = new URLSearchParams(window.location.search).get("lang");
+      if (urlLang && translations[urlLang as Language]) {
+        setLang(urlLang as Language);
+      }
+    }
+  }, []);
+
   const t = translations[lang];
 
   useDocumentLanguage(lang);
