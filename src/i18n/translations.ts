@@ -25,7 +25,7 @@ export const translations: Record<Language, Record<string, string>> = {
     languageSelect: "Language",
 
     // Game
-    tea: "Assam Tea",
+    tea: "Assam Tea", rain: "Rain", flower: "Flower",
     music: "Bihu Dhol",
     bamboo: "Bamboo",
     hills: "Hills",
@@ -88,7 +88,7 @@ export const translations: Record<Language, Record<string, string>> = {
     languageSelect: "ভাষা",
 
     // Game
-    tea: "অসমৰ চাহ",
+    tea: "অসমৰ চাহ", rain: "বৰষুণ", flower: "ফুল",
     music: "বিহু ঢোল",
     bamboo: "বাঁহ",
     hills: "পাহাৰ",
@@ -151,7 +151,7 @@ export const translations: Record<Language, Record<string, string>> = {
     languageSelect: "ভাষা",
 
     // Game
-    tea: "আসাম চা",
+    tea: "আসাম চা", rain: "বৃষ্টি", flower: "ফুল",
     music: "বিহু ঢোল",
     bamboo: "বাঁশ",
     hills: "পাহাড়",
@@ -214,7 +214,7 @@ export const translations: Record<Language, Record<string, string>> = {
     languageSelect: "भाषा",
 
     // Game
-    tea: "असम की चाय",
+    tea: "असम की चाय", rain: "बारिश", flower: "फूल",
     music: "बिहू ढोल",
     bamboo: "बांस",
     hills: "पहाड़",

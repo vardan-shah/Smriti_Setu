@@ -1,20 +1,22 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Coffee, Music, TreePine, Mountain, Moon, Sun, Home as HomeIcon, Droplet, Pill, Volume2, Wifi, WifiOff, RefreshCcw, AlertCircle } from "lucide-react";
+import { Coffee, Music, TreePine, Mountain, Moon, Sun, Home as HomeIcon, Droplet, Pill, Volume2, Wifi, WifiOff, RefreshCcw, AlertCircle, CloudRain, Flower2 } from "lucide-react";
 import Link from "next/link";
 import { saveSessionLocally } from "../utils/db";
 import { translations, Language } from "../../i18n/translations";
 import { useDocumentLanguage } from "../../i18n/language";
 import { playVoicePrompt } from "../../i18n/voice";
 
-const CARDS = [
+const CARD_POOL = [
   { icon: Coffee, key: "tea", color: "bg-amber-100 text-amber-700" },
   { icon: Music, key: "music", color: "bg-rose-100 text-rose-700" },
   { icon: TreePine, key: "bamboo", color: "bg-emerald-100 text-emerald-700" },
   { icon: Mountain, key: "hills", color: "bg-slate-200 text-slate-700" },
   { icon: Sun, key: "morning", color: "bg-orange-100 text-orange-600" },
   { icon: Moon, key: "night", color: "bg-indigo-100 text-indigo-700" },
+  { icon: CloudRain, key: "rain", color: "bg-cyan-100 text-cyan-700" },
+  { icon: Flower2, key: "flower", color: "bg-pink-100 text-pink-700" },
 ];
 
 function BrainIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -49,9 +51,12 @@ export default function PatientView() {
   useDocumentLanguage(lang);
   const t = translations[lang];
 
+  const [difficulty, setDifficulty] = useState<number>(6); // Start at Medium (6 pairs)
+  const [activeCardCount, setActiveCardCount] = useState<number>(6);
+
   // Initialize strictly with unshuffled cards to prevent SSR hydration mismatch.
   const [cards, setCards] = useState(() => 
-    [...CARDS, ...CARDS].map((card, idx) => ({ ...card, uniqueId: idx }))
+    [...CARD_POOL.slice(0, 6), ...CARD_POOL.slice(0, 6)].map((card, idx) => ({ ...card, uniqueId: idx }))
   );
   
   const [flipped, setFlipped] = useState<number[]>([]);
@@ -71,8 +76,10 @@ export default function PatientView() {
   const [seenCards, setSeenCards] = useState<Set<string>>(new Set());
   const [memoryLapses, setMemoryLapses] = useState<number>(0);
 
-  const initializeGame = useCallback(() => {
-    setCards(prev => [...prev].sort(() => Math.random() - 0.5));
+  const initializeGame = useCallback((diffToUse: number) => {
+    setActiveCardCount(diffToUse);
+    const pool = CARD_POOL.slice(0, diffToUse);
+    setCards([...pool, ...pool].sort(() => Math.random() - 0.5).map((card, idx) => ({ ...card, uniqueId: idx })));
     setFlipped([]);
     setMatched([]);
     setWin(false);
@@ -99,8 +106,29 @@ export default function PatientView() {
 
     // Safely shuffle cards only on client to avoid hydration mismatch
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    initializeGame();
+    initializeGame(6);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsReady(true);
+
+    // AI Adaptive Difficulty: Fetch last session and adjust board size
+    import("../utils/db").then(({ getAllSessions }) => {
+      getAllSessions().then(sessions => {
+        if (sessions.length > 0) {
+          const lastSession = sessions[sessions.length - 1];
+          let newDiff = 6;
+          // RL Logic: If they are doing great, increase to 8 pairs. If struggling, drop to 4 pairs.
+          if (lastSession.accuracy >= 80) newDiff = 8;
+          else if (lastSession.accuracy < 50) newDiff = 4;
+          
+          setDifficulty(newDiff);
+          // Only auto-update board if user hasn't started playing yet
+          setMoves(m => {
+             if (m === 0) initializeGame(newDiff);
+             return m;
+          });
+        }
+      });
+    });
 
     return () => {
       window.removeEventListener("online", handleOnline);
@@ -172,10 +200,10 @@ export default function PatientView() {
       if (first.key === second.key) {
         setMatched(prev => {
           const newMatched = [...prev, first.key];
-          if (newMatched.length === CARDS.length) {
+          if (newMatched.length === activeCardCount) {
             setWin(true);
             const elapsed = Math.floor((now - startTime) / 1000);
-            const perfectMoves = CARDS.length;
+            const perfectMoves = activeCardCount;
             const actualMoves = moves + 1;
             const accuracy = Math.round((perfectMoves / actualMoves) * 100);
             
@@ -189,7 +217,7 @@ export default function PatientView() {
 
             saveSessionLocally({ 
               game: "matching", 
-              matches: CARDS.length, 
+              matches: activeCardCount, 
               timeSpent: elapsed, 
               langUsed: lang,
               accuracy: accuracy > 100 ? 100 : accuracy,
@@ -271,9 +299,12 @@ export default function PatientView() {
           <div className="w-full flex justify-between items-center mb-8">
             <h2 className="text-3xl font-black text-slate-800">
               {lang} {t.gameMode || "Mode"}
+              <span className="ml-3 text-sm px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full font-bold uppercase tracking-wide shadow-inner border border-indigo-200">
+                Level {activeCardCount}
+              </span>
             </h2>
             <div className="px-4 py-2 md:px-6 md:py-3 bg-emerald-100 rounded-2xl text-emerald-800 text-xl md:text-2xl font-bold border-4 border-emerald-200">
-              {t.matches || "Matches"}: {matched.length} / {CARDS.length}
+              {t.matches || "Matches"}: {matched.length} / {activeCardCount}
             </div>
           </div>
 
@@ -289,7 +320,7 @@ export default function PatientView() {
               <h2 className="text-5xl md:text-6xl font-black text-emerald-600">{t.greatJob || "Great Job!"}</h2>
               <p className="text-2xl md:text-3xl text-slate-600 font-medium">{t.matchedAll || "Matched All"}</p>
               <button 
-                onClick={initializeGame}
+                onClick={() => initializeGame(difficulty)}
                 className="mt-8 flex items-center gap-4 px-8 py-5 md:px-12 md:py-6 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full text-3xl md:text-4xl font-bold shadow-xl active:scale-95 transition-all"
               >
                 <RefreshCcw className="w-8 h-8 md:w-10 md:h-10" /> {t.playAgain || "Play Again"}

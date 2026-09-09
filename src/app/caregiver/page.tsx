@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Home, CheckCircle2, Clock, Calendar, TrendingDown, TrendingUp, Activity } from "lucide-react";
+import { Home, CheckCircle2, Clock, Calendar, TrendingDown, TrendingUp, Activity, AlertOctagon } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Suspense, useEffect, useState } from "react";
 import { getAllSessions, GameSession } from "../utils/db";
@@ -47,6 +47,29 @@ function DashboardContent() {
     ? Math.round(recentSessions.reduce((acc, s) => acc + s.timeSpent, 0) / recentSessions.length / 60) 
     : 0;
   
+  // AI Predictive Anomaly Detection
+  let anomalyDetected = false;
+  let anomalyMessage = "";
+
+  if (recentSessions.length >= 4) {
+    const latest3 = recentSessions.slice(-3);
+    const previous = recentSessions.slice(0, -3);
+    
+    const avgRecentAccuracy = latest3.reduce((a, b) => a + b.accuracy, 0) / latest3.length;
+    const avgPastAccuracy = previous.reduce((a, b) => a + b.accuracy, 0) / previous.length;
+    
+    if (avgPastAccuracy - avgRecentAccuracy >= 20) {
+      anomalyDetected = true;
+      anomalyMessage = `COGNITIVE DECLINE: Accuracy dropped by ${(avgPastAccuracy - avgRecentAccuracy).toFixed(1)}% over the last 3 sessions.`;
+    }
+
+    const recentHesitation = latest3.filter(s => s.biomarkers).reduce((a, b) => a + (b.biomarkers?.hesitationMs || 0), 0) / latest3.length;
+    if (recentHesitation > 8000) { 
+      anomalyDetected = true;
+      anomalyMessage = `BIOMARKER ANOMALY: Severe hesitation detected (Avg ${(recentHesitation / 1000).toFixed(1)}s before interaction).`;
+    }
+  }
+
   const recentAccuracy = recentSessions.length > 0 ? recentSessions[recentSessions.length - 1].accuracy : 100;
   const requiresAttention = recentAccuracy < 70;
 
@@ -65,6 +88,16 @@ function DashboardContent() {
 
         {sessions.length > 0 ? (
           <>
+            {anomalyDetected && (
+              <div className="bg-red-600 text-white p-6 rounded-2xl shadow-lg flex items-start md:items-center gap-4 animate-in fade-in slide-in-from-top-4 border-4 border-red-700">
+                <AlertOctagon className="w-12 h-12 shrink-0 text-red-100" />
+                <div>
+                  <h3 className="text-xl md:text-2xl font-black tracking-wide uppercase">AI Predictive Alert</h3>
+                  <p className="mt-1 text-red-100 font-medium text-base md:text-lg">{anomalyMessage} Please review immediately.</p>
+                </div>
+              </div>
+            )}
+
             <div className={`border rounded-2xl p-6 flex items-start gap-4 ${requiresAttention ? 'bg-rose-50 border-rose-200' : 'bg-emerald-50 border-emerald-200'}`}>
               {requiresAttention ? <TrendingDown className="w-8 h-8 text-rose-600 shrink-0 mt-1" /> : <TrendingUp className="w-8 h-8 text-emerald-600 shrink-0 mt-1" />}
               <div>
