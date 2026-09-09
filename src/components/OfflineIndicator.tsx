@@ -6,28 +6,24 @@ import { translations, Language } from "../i18n/translations";
 
 
 export function OfflineIndicator() {
-  const [isOnline, setIsOnline] = useState(true);
+  const [isOnline, setIsOnline] = useState(() => typeof navigator !== "undefined" ? navigator.onLine : true);
   const [pendingCount, setPendingCount] = useState(0);
   const [syncState, setSyncState] = useState<'idle' | 'syncing' | 'synced' | 'failed'>('idle');
 
   // We fetch language loosely here without suspense wrapper since it's just a floating widget
   // and we don't want to break the entire layout. It uses window location as a fallback.
-  const [lang, setLang] = useState<Language>("English");
-
-  useEffect(() => {
+  const [lang, setLang] = useState<Language>(() => {
     if (typeof window !== "undefined") {
       const url = new URL(window.location.href);
       const urlLang = url.searchParams.get("lang") as Language;
-      if (urlLang && translations[urlLang]) {
-        setTimeout(() => setLang(urlLang), 0);
-      }
+      if (urlLang && translations[urlLang]) return urlLang;
     }
-  }, []);
+    return "English";
+  });
 
   const t = translations[lang];
 
   useEffect(() => {
-    if (typeof navigator !== "undefined") setIsOnline(navigator.onLine);
     const handleOnline = async () => {
       setIsOnline(true);
       const pending = await getPendingSessions();

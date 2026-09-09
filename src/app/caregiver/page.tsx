@@ -9,16 +9,15 @@ import { translations, Language } from "../../i18n/translations";
 import { useDocumentLanguage } from "../../i18n/language";
 
 function DashboardContent() {
-  const [lang, setLang] = useState<Language>("English");
-  
-  useEffect(() => {
+  const [lang, setLang] = useState<Language>(() => {
     if (typeof window !== "undefined") {
       const urlLang = new URLSearchParams(window.location.search).get("lang");
       if (urlLang && translations[urlLang as Language]) {
-        setLang(urlLang as Language);
+        return urlLang as Language;
       }
     }
-  }, []);
+    return "English";
+  });
 
   const t = translations[lang];
 
@@ -62,15 +61,18 @@ function DashboardContent() {
     const latest3 = recentSessions.slice(-3);
     const previous = recentSessions.slice(0, -3);
     
-    const avgRecentAccuracy = latest3.reduce((a, b) => a + b.accuracy, 0) / latest3.length;
-    const avgPastAccuracy = previous.reduce((a, b) => a + b.accuracy, 0) / previous.length;
+    const avgRecentAccuracy = latest3.reduce((a, b) => a + (b.accuracy || 0), 0) / latest3.length;
+    const avgPastAccuracy = previous.reduce((a, b) => a + (b.accuracy || 0), 0) / previous.length;
     
     if (avgPastAccuracy - avgRecentAccuracy >= 20) {
       anomalyDetected = true;
       anomalyMessage = `COGNITIVE DECLINE: Accuracy dropped by ${(avgPastAccuracy - avgRecentAccuracy).toFixed(1)}% over the last 3 sessions.`;
     }
 
-    const recentHesitation = latest3.filter(s => s.biomarkers).reduce((a, b) => a + (b.biomarkers?.hesitationMs || 0), 0) / latest3.length;
+    const sessionsWithBiomarkers = latest3.filter(s => s.biomarkers);
+    const recentHesitation = sessionsWithBiomarkers.length > 0 
+      ? sessionsWithBiomarkers.reduce((a, b) => a + (b.biomarkers?.hesitationMs || 0), 0) / sessionsWithBiomarkers.length 
+      : 0;
     if (recentHesitation > 8000) { 
       anomalyDetected = true;
       anomalyMessage = `BIOMARKER ANOMALY: Severe hesitation detected (Avg ${(recentHesitation / 1000).toFixed(1)}s before interaction).`;

@@ -36,17 +36,15 @@ function BrainIcon(props: React.SVGProps<SVGSVGElement>) {
 }
 
 export default function PatientView() {
-  const [lang, setLang] = useState<Language>("English");
-  
-  useEffect(() => {
+  const [lang, setLang] = useState<Language>(() => {
     if (typeof window !== "undefined") {
       const urlLang = new URLSearchParams(window.location.search).get("lang");
       if (urlLang && translations[urlLang as Language]) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setLang(urlLang as Language);
+        return urlLang as Language;
       }
     }
-  }, []);
+    return "English";
+  });
 
   useDocumentLanguage(lang);
   const t = translations[lang];
@@ -62,7 +60,7 @@ export default function PatientView() {
   const [flipped, setFlipped] = useState<number[]>([]);
   const [matched, setMatched] = useState<string[]>([]);
   const [win, setWin] = useState(false);
-  const [isOnline, setIsOnline] = useState(true);
+  const [isOnline, setIsOnline] = useState(() => typeof navigator !== "undefined" ? navigator.onLine : true);
   const [offlineMode, setOfflineMode] = useState(false);
   const [voiceState, setVoiceState] = useState<'idle' | 'playing' | 'unavailable'>('idle');
   const [startTime, setStartTime] = useState<number>(0);
@@ -97,7 +95,6 @@ export default function PatientView() {
   }, []);
 
   useEffect(() => {
-    if (typeof navigator !== "undefined") setIsOnline(navigator.onLine);
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
     window.addEventListener("online", handleOnline);
@@ -108,10 +105,7 @@ export default function PatientView() {
     }
 
     // Safely shuffle cards only on client to avoid hydration mismatch
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    initializeGame(6);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setIsReady(true);
+    setTimeout(() => { initializeGame(6); setIsReady(true); }, 0);
 
     // AI Adaptive Difficulty: Fetch last session and adjust board size
     import("../utils/db").then(({ getAllSessions }) => {
