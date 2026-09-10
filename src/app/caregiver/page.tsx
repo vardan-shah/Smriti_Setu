@@ -5,6 +5,7 @@ import { Home, CheckCircle2, Clock, Calendar, TrendingDown, TrendingUp, Activity
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Suspense, useEffect, useState } from "react";
 import { getAllSessions, GameSession } from "../utils/db";
+import { computeArmValues, DIFFICULTY_ARMS } from "../../lib/adaptiveDifficulty";
 import { translations, Language } from "../../i18n/translations";
 import { useDocumentLanguage } from "../../i18n/language";
 
@@ -43,6 +44,7 @@ function DashboardContent() {
   // Filter latest 7
   const recentSessions = sessions.slice(-7);
 
+  const armStats = computeArmValues(sessions);
   const chartData = recentSessions.map((s, i) => ({
     name: `S${i + 1}`,
     accuracy: s.accuracy || 0,
@@ -200,6 +202,25 @@ function DashboardContent() {
                 </ResponsiveContainer>
               </div>
             </div>
+            {sessions.length > 0 && (
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+                  <Activity className="w-6 h-6 text-fuchsia-500"/> AI Adaptive Difficulty (Multi-Armed Bandit)
+                </h2>
+                <div className="grid grid-cols-3 gap-4">
+                  {DIFFICULTY_ARMS.map(arm => (
+                    <div key={arm} className="p-4 bg-slate-50 rounded-xl border border-slate-100 flex flex-col items-center">
+                      <p className="text-sm text-slate-500 font-medium">Level {arm} Pairs</p>
+                      <div className="w-full bg-slate-200 h-2 mt-2 rounded-full overflow-hidden">
+                        <div className="bg-fuchsia-500 h-full transition-all" style={{ width: `${Math.round(armStats[arm].qValue * 100)}%` }} />
+                      </div>
+                      <p className="text-xs text-slate-400 mt-2 font-bold">Q-Value: {armStats[arm].qValue.toFixed(2)}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
           </>
         ) : (
           !loading && (

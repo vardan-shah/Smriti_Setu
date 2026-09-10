@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Coffee, Music, TreePine, Mountain, Moon, Sun, Home as HomeIcon, Droplet, Pill, Volume2, Wifi, WifiOff, RefreshCcw, AlertCircle, CloudRain, Flower2 } from "lucide-react";
 import Link from "next/link";
 import { saveSessionLocally } from "../utils/db";
+import { selectDifficulty } from "../../lib/adaptiveDifficulty";
 import { translations, Language } from "../../i18n/translations";
 import { useDocumentLanguage } from "../../i18n/language";
 import { playVoicePrompt } from "../../i18n/voice";
@@ -107,21 +108,14 @@ export default function PatientView() {
     // Safely shuffle cards only on client to avoid hydration mismatch
     setTimeout(() => { initializeGame(6); setIsReady(true); }, 0);
 
-    // AI Adaptive Difficulty: Fetch last session and adjust board size
+    // AI Adaptive Difficulty: Contextual Multi-Armed Bandit
     import("../utils/db").then(({ getAllSessions }) => {
       getAllSessions().then(sessions => {
-        if (sessions.length > 0) {
-          const lastSession = sessions[sessions.length - 1];
-          let newDiff = 6;
-          // RL Logic: If they are doing great, increase to 8 pairs. If struggling, drop to 4 pairs.
-          if (lastSession.accuracy >= 80) newDiff = 8;
-          else if (lastSession.accuracy < 50) newDiff = 4;
-          
-          setDifficulty(newDiff);
-          // Only auto-update board if user hasn't started playing yet
-          if (movesRef.current === 0) {
-             initializeGame(newDiff);
-          }
+        const newDiff = selectDifficulty(sessions);
+        setDifficulty(newDiff);
+        // Only auto-update board if user hasn't started playing yet
+        if (movesRef.current === 0) {
+           initializeGame(newDiff);
         }
       });
     });
