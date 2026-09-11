@@ -80,6 +80,20 @@ export const translations: Record<Language, Record<string, string>> = {
     level: "Level",
     enable: "Enable",
     disable: "Disable",
+    // New Game Additions
+    bird: "Bird", car: "Car",
+    selectLevel: "Select Level",
+    start: "Start Game",
+    performanceReport: "Performance Report",
+    accuracy: "Accuracy",
+    timeTaken: "Time Taken",
+    suggestion: "Suggestion",
+    suggestIncrease: "You did great! Try increasing the level.",
+    suggestDecrease: "This was tough. Maybe try a lower level.",
+    suggestMaintain: "Good job! Keep practicing at this level.",
+    playSuggested: "Play Suggested Level",
+    playSame: "Play Same Level",
+    chooseLevel: "Choose Level",
   },
   Assamese: {
     // Shared
@@ -160,6 +174,20 @@ export const translations: Record<Language, Record<string, string>> = {
     level: "স্তৰ",
     enable: "সক্ৰিয় কৰক",
     disable: "নিষ্ক্ৰিয় কৰক",
+    // New Game Additions
+    bird: "চৰাই", car: "গাড়ী",
+    selectLevel: "স্তৰ বাছনি কৰক",
+    start: "খেল আৰম্ভ কৰক",
+    performanceReport: "প্ৰদৰ্শনৰ প্ৰতিবেদন",
+    accuracy: "শুদ্ধতা",
+    timeTaken: "লোৱা সময়",
+    suggestion: "পৰামৰ্শ",
+    suggestIncrease: "আপুনি বহুত ভাল খেলিলে! স্তৰ বৃদ্ধি কৰি চাওক।",
+    suggestDecrease: "এইটো অলপ টান আছিল। এটা তলৰ স্তৰ খেলি চাওক।",
+    suggestMaintain: "ভাল খেলিছে! এই স্তৰতে অনুশীলন কৰি থাকক।",
+    playSuggested: "পৰামৰ্শ দিয়া স্তৰ খেলক",
+    playSame: "একে স্তৰ খেলক",
+    chooseLevel: "স্তৰ বাছনি কৰক",
   },
   Bengali: {
     // Shared
@@ -240,6 +268,20 @@ export const translations: Record<Language, Record<string, string>> = {
     level: "স্তর",
     enable: "সক্রিয় করুন",
     disable: "নিষ্ক্রিয় করুন",
+    // New Game Additions
+    bird: "পাখি", car: "গাড়ি",
+    selectLevel: "স্তর নির্বাচন করুন",
+    start: "খেলা শুরু করুন",
+    performanceReport: "পারফরম্যান্স রিপোর্ট",
+    accuracy: "সঠিকতা",
+    timeTaken: "গৃহীত সময়",
+    suggestion: "পরামর্শ",
+    suggestIncrease: "আপনি দারুন খেলেছেন! স্তর বাড়ানোর চেষ্টা করুন।",
+    suggestDecrease: "এটি কঠিন ছিল। একটু নিচের স্তর চেষ্টা করুন।",
+    suggestMaintain: "ভাল খেলেছেন! এই স্তরে অনুশীলন চালিয়ে যান।",
+    playSuggested: "প্রস্তাবিত স্তর খেলুন",
+    playSame: "একই স্তর খেলুন",
+    chooseLevel: "স্তর নির্বাচন করুন",
   },
   Hindi: {
     // Shared
@@ -320,5 +362,19 @@ export const translations: Record<Language, Record<string, string>> = {
     level: "स्तर",
     enable: "सक्षम करें",
     disable: "अक्षम करें",
+    // New Game Additions
+    bird: "पक्षी", car: "गाड़ी",
+    selectLevel: "स्तर चुनें",
+    start: "खेल शुरू करें",
+    performanceReport: "प्रदर्शन रिपोर्ट",
+    accuracy: "सटीकता",
+    timeTaken: "लिया गया समय",
+    suggestion: "सुझाव",
+    suggestIncrease: "आपने बहुत अच्छा खेला! स्तर बढ़ाने का प्रयास करें।",
+    suggestDecrease: "यह थोड़ा कठिन था। शायद निचला स्तर आज़माएँ।",
+    suggestMaintain: "अच्छा किया! इसी स्तर पर अभ्यास करते रहें।",
+    playSuggested: "सुझाया गया स्तर खेलें",
+    playSame: "समान स्तर खेलें",
+    chooseLevel: "स्तर चुनें",
   }
 };

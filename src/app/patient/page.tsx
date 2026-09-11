@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Coffee, Music, TreePine, Mountain, Moon, Sun, Home as HomeIcon, Droplet, Pill, Volume2, Wifi, WifiOff, RefreshCcw, AlertCircle, CloudRain, Flower2 } from "lucide-react";
+import { Coffee, Music, TreePine, Mountain, Moon, Sun, Home as HomeIcon, Droplet, Pill, Volume2, Wifi, WifiOff, RefreshCcw, AlertCircle, CloudRain, Flower2, Bird, Car } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { saveSessionLocally } from "../utils/db";
-import { selectDifficulty } from "../../lib/adaptiveDifficulty";
+
 import { translations, Language } from "../../i18n/translations";
 import { useDocumentLanguage } from "../../i18n/language";
 import { playVoicePrompt } from "../../i18n/voice";
@@ -20,6 +20,8 @@ const CARD_POOL = [
   { icon: Moon, key: "night", color: "bg-indigo-100 text-indigo-700" },
   { icon: CloudRain, key: "rain", color: "bg-cyan-100 text-cyan-700" },
   { icon: Flower2, key: "flower", color: "bg-pink-100 text-pink-700" },
+  { icon: Bird, key: "bird", color: "bg-teal-100 text-teal-700" },
+  { icon: Car, key: "car", color: "bg-red-100 text-red-700" },
 ];
 
 function BrainIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -46,7 +48,9 @@ function PatientContent() {
   useDocumentLanguage(lang);
   const t = translations[lang];
 
-  const [difficulty, setDifficulty] = useState<number>(6); // Start at Medium (6 pairs)
+  const [difficulty, setDifficulty] = useState<number>(1);
+  const [gamePhase, setGamePhase] = useState<'selection' | 'playing' | 'report'>('selection');
+  const [finalReport, setFinalReport] = useState<{accuracy: number, time: number, suggestion: number}>({accuracy: 0, time: 0, suggestion: 1});
   const [activeCardCount, setActiveCardCount] = useState<number>(6);
 
   // Initialize strictly with unshuffled cards to prevent SSR hydration mismatch.
@@ -74,8 +78,9 @@ function PatientContent() {
 
   const initializeGame = useCallback((diffToUse: number) => {
     setActiveCardCount(diffToUse);
-    const pool = CARD_POOL.slice(0, diffToUse);
+    const pool = CARD_POOL.slice(0, Math.min(diffToUse, CARD_POOL.length));
     setCards([...pool, ...pool].sort(() => Math.random() - 0.5).map((card, idx) => ({ ...card, uniqueId: idx })));
+    setGamePhase('playing');
     setFlipped([]);
     setMatched([]);
     setWin(false);
@@ -101,20 +106,8 @@ function PatientContent() {
       window.speechSynthesis.getVoices();
     }
 
-    // Safely shuffle cards only on client to avoid hydration mismatch
-    setTimeout(() => { initializeGame(6); setIsReady(true); }, 0);
-
-    // AI Adaptive Difficulty: Contextual Multi-Armed Bandit
-    import("../utils/db").then(({ getAllSessions }) => {
-      getAllSessions().then(sessions => {
-        const newDiff = selectDifficulty(sessions);
-        setDifficulty(newDiff);
-        // Only auto-update board if user hasn't started playing yet
-        if (movesRef.current === 0) {
-           initializeGame(newDiff);
-        }
-      });
-    });
+    // Ready the UI to let the user select their level
+    setTimeout(() => setIsReady(true), 0);
 
     return () => {
       window.removeEventListener("online", handleOnline);
@@ -219,6 +212,12 @@ function PatientContent() {
             }).catch(console.error);
             
             setTimeout(() => handleVoice('greatJob', t.greatJob), 500);
+
+            let suggestion = activeCardCount;
+            if (accuracy > 85 && hesitationMs < 3000 && activeCardCount < 10) suggestion = activeCardCount + 1;
+            else if ((accuracy < 60 || hesitationMs > 8000) && activeCardCount > 1) suggestion = activeCardCount - 1;
+            setFinalReport({ accuracy, time: elapsed, suggestion });
+            setTimeout(() => setGamePhase('report'), 2000);
           }
           return newMatched;
         });
@@ -230,6 +229,74 @@ function PatientContent() {
   };
 
   const effectivelyOffline = offlineMode || !isOnline;
+
+  if (!isReady) return null;
+
+  if (gamePhase === 'selection') {
+    return (
+      <div className="min-h-screen bg-slate-50 p-4 md:p-6 flex flex-col items-center justify-center">
+        <h1 className="text-4xl font-bold text-slate-800 mb-8">{t.selectLevel || "Select Level"}</h1>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 max-w-4xl w-full">
+          {Array.from({ length: 10 }, (_, i) => i + 1).map((lvl) => (
+            <button
+              key={lvl}
+              onClick={() => {
+                setDifficulty(lvl);
+                initializeGame(lvl);
+              }}
+              className="flex flex-col items-center justify-center p-8 bg-white rounded-3xl shadow-sm border-2 border-emerald-100 hover:border-emerald-500 hover:shadow-lg transition-all active:scale-95"
+            >
+              <span className="text-4xl font-black text-slate-700 mb-2">{lvl}</span>
+              <span className="text-sm font-medium text-slate-500 uppercase tracking-wider">{t.level || "Level"}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (gamePhase === 'report') {
+    return (
+      <div className="min-h-screen bg-slate-50 p-4 md:p-6 flex flex-col items-center justify-center">
+        <div className="bg-white p-10 rounded-3xl shadow-lg border border-slate-100 max-w-2xl w-full text-center">
+          <h1 className="text-4xl font-bold text-slate-800 mb-8">{t.performanceReport || "Performance Report"}</h1>
+          <div className="grid grid-cols-2 gap-6 mb-8">
+            <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
+              <p className="text-slate-500 font-medium mb-1">{t.accuracy || "Accuracy"}</p>
+              <p className="text-3xl font-bold text-emerald-600">{finalReport.accuracy}%</p>
+            </div>
+            <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
+              <p className="text-slate-500 font-medium mb-1">{t.timeTaken || "Time Taken"}</p>
+              <p className="text-3xl font-bold text-blue-600">{finalReport.time}s</p>
+            </div>
+          </div>
+          
+          <div className="p-6 bg-indigo-50 rounded-2xl border border-indigo-100 mb-10 text-left">
+            <p className="text-indigo-800 font-bold mb-2 flex items-center gap-2">
+              <BrainIcon className="w-6 h-6" /> {t.suggestion || "Suggestion"}
+            </p>
+            <p className="text-indigo-600 text-lg">
+              {finalReport.suggestion > difficulty ? (t.suggestIncrease || "You did great! Try increasing the level.") : 
+               finalReport.suggestion < difficulty ? (t.suggestDecrease || "This was tough. Maybe try a lower level.") : 
+               (t.suggestMaintain || "Good job! Keep practicing at this level.")}
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-4">
+            <button onClick={() => initializeGame(finalReport.suggestion)} className="w-full py-4 bg-emerald-600 text-white rounded-2xl text-xl font-bold shadow-md hover:bg-emerald-700 active:scale-95 transition-all">
+              {t.playSuggested || "Play Suggested Level"} ({(t.level || "Level")} {finalReport.suggestion})
+            </button>
+            <button onClick={() => initializeGame(difficulty)} className="w-full py-4 bg-slate-100 text-slate-700 rounded-2xl text-xl font-bold hover:bg-slate-200 active:scale-95 transition-all">
+              {t.playSame || "Play Same Level"} ({(t.level || "Level")} {difficulty})
+            </button>
+            <button onClick={() => setGamePhase('selection')} className="w-full py-4 bg-transparent text-slate-500 hover:text-slate-700 rounded-2xl text-lg font-medium transition-colors">
+              {t.chooseLevel || "Choose Level"}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-6 flex flex-col items-center">
