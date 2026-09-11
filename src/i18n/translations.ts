@@ -62,7 +62,24 @@ export const translations: Record<Language, Record<string, string>> = {
     emptyState: "No sessions recorded yet. Play a game to see trends.",
     noData: "No data available",
     mins: "mins",
-    demoOnly: "(Demo Data)"
+    demoOnly: "(Demo Data)",
+
+    // AI / Predictive
+    aiPredictiveAlert: "AI Predictive Alert",
+    reviewImmediately: "Please review immediately.",
+    cognitiveDeclineAlert: "COGNITIVE DECLINE: Accuracy dropped by {diff}% over the last 3 sessions.",
+    biomarkerAnomalyAlert: "BIOMARKER ANOMALY: Severe hesitation detected (Avg {time}s before interaction).",
+    digitalBiomarkers: "Digital Biomarkers (Latest Session)",
+    avgReactionTime: "Avg Reaction Time",
+    hesitation: "Hesitation",
+    memoryLapses: "Memory Lapses",
+    timeOfDay: "Time of Day",
+    aiAdaptiveDiff: "How the game is adjusting to patient",
+    levelPairs: "Level {arm} Pairs",
+    qValue: "Q-Value",
+    level: "Level",
+    enable: "Enable",
+    disable: "Disable",
   },
   Assamese: {
     // Shared
@@ -125,7 +142,24 @@ export const translations: Record<Language, Record<string, string>> = {
     emptyState: "কোনো খেল খেলা হোৱা নাই।",
     noData: "কোনো তথ্য নাই",
     mins: "মিনিট",
-    demoOnly: "(ডেমো তথ্য)"
+    demoOnly: "(ডেমো তথ্য)",
+
+    // AI / Predictive
+    aiPredictiveAlert: "এআই পূৰ্বানুমান সতৰ্কবাণী",
+    reviewImmediately: "অনুগ্ৰহ কৰি লগে লগে পৰীক্ষা কৰক।",
+    cognitiveDeclineAlert: "জ্ঞানাত্মক অৱনতি: যোৱা ৩টা খেলত শুদ্ধতা {diff}% হ্ৰাস পাইছে।",
+    biomarkerAnomalyAlert: "বায়'মাৰ্কাৰ বিসংগতি: তীব্ৰ দ্বিধা ধৰা পৰিছে (খেলৰ আগতে গড় {time} ছেকেণ্ড)।",
+    digitalBiomarkers: "ডিজিটেল বায়'মাৰ্কাৰ (শেহতীয়া খেল)",
+    avgReactionTime: "গড় প্ৰতিক্ৰিয়াৰ সময়",
+    hesitation: "দ্বিধা",
+    memoryLapses: "স্মৃতিভ্ৰম",
+    timeOfDay: "দিনৰ সময়",
+    aiAdaptiveDiff: "খেলখন ৰোগীৰ সৈতে কেনেদৰে খাপ খাইছে",
+    levelPairs: "স্তৰ {arm} যোৰ",
+    qValue: "কিউ-ভ্যালু",
+    level: "স্তৰ",
+    enable: "সক্ৰিয় কৰক",
+    disable: "নিষ্ক্ৰিয় কৰক",
   },
   Bengali: {
     // Shared
@@ -188,7 +222,24 @@ export const translations: Record<Language, Record<string, string>> = {
     emptyState: "কোনো গেম খেলা হয়নি।",
     noData: "কোনো ডেটা নেই",
     mins: "মিনিট",
-    demoOnly: "(ডেমো ডেটা)"
+    demoOnly: "(ডেমো ডেটা)",
+
+    // AI / Predictive
+    aiPredictiveAlert: "এআই পূর্বাভাস সতর্কতা",
+    reviewImmediately: "অনুগ্রহ করে অবিলম্বে পর্যালোচনা করুন।",
+    cognitiveDeclineAlert: "জ্ঞানীয় অবনতি: গত ৩টি গেমে নির্ভুলতা {diff}% কমেছে।",
+    biomarkerAnomalyAlert: "বায়োমার্কার অসঙ্গতি: গুরুতর দ্বিধা সনাক্ত করা হয়েছে (খেলার আগে গড় {time} সেকেন্ড)।",
+    digitalBiomarkers: "ডিজিটাল বায়োমার্কার (সর্বশেষ গেম)",
+    avgReactionTime: "গড় প্রতিক্রিয়া সময়",
+    hesitation: "দ্বিধা",
+    memoryLapses: "স্মৃতিভ্রম",
+    timeOfDay: "দিনের সময়",
+    aiAdaptiveDiff: "গেমটি রোগীর সাথে কীভাবে মানিয়ে নিচ্ছে",
+    levelPairs: "স্তর {arm} জোড়া",
+    qValue: "কিউ-ভ্যালু",
+    level: "স্তর",
+    enable: "সক্রিয় করুন",
+    disable: "নিষ্ক্রিয় করুন",
   },
   Hindi: {
     // Shared
@@ -251,6 +302,23 @@ export const translations: Record<Language, Record<string, string>> = {
     emptyState: "अभी तक कोई गेम नहीं खेला गया है।",
     noData: "कोई डेटा नहीं",
     mins: "मिनट",
-    demoOnly: "(डेमो डेटा)"
+    demoOnly: "(डेमो डेटा)",
+
+    // AI / Predictive
+    aiPredictiveAlert: "एआई पूर्वानुमान चेतावनी",
+    reviewImmediately: "कृपया तुरंत समीक्षा करें।",
+    cognitiveDeclineAlert: "संज्ञानात्मक गिरावट: पिछले 3 खेलों में सटीकता में {diff}% की गिरावट आई है।",
+    biomarkerAnomalyAlert: "बायोमार्कर विसंगति: गंभीर संकोच का पता चला (बातचीत से पहले औसत {time}s)।",
+    digitalBiomarkers: "डिजिटल बायोमार्कर (नवीनतम गेम)",
+    avgReactionTime: "औसत प्रतिक्रिया समय",
+    hesitation: "संकोच",
+    memoryLapses: "स्मृति लोप",
+    timeOfDay: "दिन का समय",
+    aiAdaptiveDiff: "गेम रोगी के अनुकूल कैसे हो रहा है",
+    levelPairs: "स्तर {arm} जोड़े",
+    qValue: "क्यू-वैल्यू",
+    level: "स्तर",
+    enable: "सक्षम करें",
+    disable: "अक्षम करें",
   }
 };

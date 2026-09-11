@@ -261,7 +261,7 @@ export default function PatientView() {
               onClick={() => setOfflineMode(!offlineMode)}
               className={`w-full py-3 px-4 rounded-xl font-bold border-2 transition-colors active:scale-95 ${offlineMode ? 'bg-amber-100 border-amber-300 text-amber-800' : 'bg-white border-slate-200 text-slate-600'}`}
             >
-              {offlineMode ? `Disable ${t.offlineMode || "Offline Mode"}` : `Enable ${t.offlineMode || "Offline Mode"}`}
+              {offlineMode ? `${t.disable} ${t.offlineMode || "Offline Mode"}` : `${t.enable} ${t.offlineMode || "Offline Mode"}`}
             </button>
           </div>
 
@@ -293,7 +293,7 @@ export default function PatientView() {
             <h2 className="text-3xl font-black text-slate-800">
               {lang} {t.gameMode || "Mode"}
               <span className="ml-3 text-sm px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full font-bold uppercase tracking-wide shadow-inner border border-indigo-200">
-                Level {activeCardCount}
+                {t.level} {activeCardCount}
               </span>
             </h2>
             <div className="px-4 py-2 md:px-6 md:py-3 bg-emerald-100 rounded-2xl text-emerald-800 text-xl md:text-2xl font-bold border-4 border-emerald-200">

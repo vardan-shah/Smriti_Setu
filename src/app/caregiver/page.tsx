@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Home, CheckCircle2, Clock, Calendar, TrendingDown, TrendingUp, Activity, AlertOctagon } from "lucide-react";
+import { Home, Clock, TrendingDown, TrendingUp, Activity, AlertOctagon } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Suspense, useEffect, useState } from "react";
 import { getAllSessions, GameSession } from "../utils/db";
@@ -68,7 +68,7 @@ function DashboardContent() {
     
     if (avgPastAccuracy - avgRecentAccuracy >= 20) {
       anomalyDetected = true;
-      anomalyMessage = `COGNITIVE DECLINE: Accuracy dropped by ${(avgPastAccuracy - avgRecentAccuracy).toFixed(1)}% over the last 3 sessions.`;
+      anomalyMessage = t.cognitiveDeclineAlert.replace('{diff}', (avgPastAccuracy - avgRecentAccuracy).toFixed(1));
     }
 
     const sessionsWithBiomarkers = latest3.filter(s => s.biomarkers);
@@ -77,7 +77,7 @@ function DashboardContent() {
       : 0;
     if (recentHesitation > 8000) { 
       anomalyDetected = true;
-      anomalyMessage = `BIOMARKER ANOMALY: Severe hesitation detected (Avg ${(recentHesitation / 1000).toFixed(1)}s before interaction).`;
+      anomalyMessage = t.biomarkerAnomalyAlert.replace('{time}', (recentHesitation / 1000).toFixed(1));
     }
   }
 
@@ -100,11 +100,11 @@ function DashboardContent() {
         {sessions.length > 0 ? (
           <>
             {anomalyDetected && (
-              <div className="bg-red-600 text-white p-6 rounded-2xl shadow-lg flex items-start md:items-center gap-4 animate-in fade-in slide-in-from-top-4 border-4 border-red-700">
-                <AlertOctagon className="w-12 h-12 shrink-0 text-red-100" />
+              <div className={`p-6 rounded-2xl shadow-lg flex items-start md:items-center gap-4 animate-in fade-in slide-in-from-top-4 border-4 ${sessions.length >= 5 ? 'bg-red-600 text-white border-red-700' : 'bg-amber-100 text-amber-900 border-amber-300'}`}>
+                <AlertOctagon className={`w-12 h-12 shrink-0 ${sessions.length >= 5 ? 'text-red-100' : 'text-amber-600'}`} />
                 <div>
                   <h3 className="text-xl md:text-2xl font-black tracking-wide uppercase">AI Predictive Alert</h3>
-                  <p className="mt-1 text-red-100 font-medium text-base md:text-lg">{anomalyMessage} Please review immediately.</p>
+                  <p className={`mt-1 font-medium text-base md:text-lg ${sessions.length >= 5 ? 'text-red-100' : 'text-amber-800'}`}>{anomalyMessage} Please review immediately.</p>
                 </div>
               </div>
             )}
@@ -121,34 +121,18 @@ function DashboardContent() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-                <div className="p-4 bg-emerald-100 rounded-xl text-emerald-600"><CheckCircle2 className="w-8 h-8" /></div>
-                <div>
-                  <p className="text-slate-500 font-medium">{t.medAdherence} <span className="text-xs text-amber-600 font-bold">{t.demoOnly}</span></p>
-                  <h3 className="text-2xl font-bold text-slate-800">100%</h3>
-                </div>
-              </div>
-              <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 w-full md:w-1/3">
                 <div className="p-4 bg-blue-100 rounded-xl text-blue-600"><Clock className="w-8 h-8" /></div>
                 <div>
                   <p className="text-slate-500 font-medium">{t.avgGameTime}</p>
                   <h3 className="text-2xl font-bold text-slate-800">{avgTime} {t.mins}</h3>
                 </div>
               </div>
-              <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-                <div className="p-4 bg-purple-100 rounded-xl text-purple-600"><Calendar className="w-8 h-8" /></div>
-                <div>
-                  <p className="text-slate-500 font-medium">{t.nextClinic} <span className="text-xs text-amber-600 font-bold">{t.demoOnly}</span></p>
-                  <h3 className="text-2xl font-bold text-slate-800">{t.noData}</h3>
-                </div>
-              </div>
-            </div>
 
             {recentSessions.length > 0 && recentSessions[recentSessions.length - 1].biomarkers && (
               <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
                 <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
-                  <Activity className="w-6 h-6 text-indigo-500"/> Digital Biomarkers (Latest Session)
+                  <Activity className="w-6 h-6 text-indigo-500"/> {t.digitalBiomarkers}
                 </h2>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
@@ -205,16 +189,16 @@ function DashboardContent() {
             {sessions.length > 0 && (
               <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
                 <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
-                  <Activity className="w-6 h-6 text-fuchsia-500"/> AI Adaptive Difficulty (Multi-Armed Bandit)
+                  <Activity className="w-6 h-6 text-fuchsia-500"/> {t.aiAdaptiveDiff}
                 </h2>
                 <div className="grid grid-cols-3 gap-4">
                   {DIFFICULTY_ARMS.map(arm => (
                     <div key={arm} className="p-4 bg-slate-50 rounded-xl border border-slate-100 flex flex-col items-center">
-                      <p className="text-sm text-slate-500 font-medium">Level {arm} Pairs</p>
+                      <p className="text-sm text-slate-500 font-medium">{t.levelPairs.replace('{arm}', String(arm))}</p>
                       <div className="w-full bg-slate-200 h-2 mt-2 rounded-full overflow-hidden">
                         <div className="bg-fuchsia-500 h-full transition-all" style={{ width: `${Math.round(armStats[arm].qValue * 100)}%` }} />
                       </div>
-                      <p className="text-xs text-slate-400 mt-2 font-bold">Q-Value: {armStats[arm].qValue.toFixed(2)}</p>
+                      <p className="text-xs text-slate-400 mt-2 font-bold">{t.qValue}: {armStats[arm].qValue.toFixed(2)}</p>
                     </div>
                   ))}
                 </div>

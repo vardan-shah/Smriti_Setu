@@ -9,8 +9,13 @@ export async function playVoicePrompt(
   onEnd?: () => void,
   onUnavailable?: () => void
 ) {
-  // 1. Try local audio asset for Assamese
-  if (lang === "Assamese") {
+  let langCode = 'en';
+  if (lang === "Assamese") langCode = 'as';
+  if (lang === "Hindi") langCode = 'hi';
+  if (lang === "Bengali") langCode = 'bn';
+
+  // 1. Try local audio asset
+  if (true) {
     let fallbackTriggered = false;
     const triggerFallback = () => {
       if (fallbackTriggered) return;
@@ -19,7 +24,7 @@ export async function playVoicePrompt(
     };
 
     try {
-      const audio = new Audio(`/audio/as/${key}.m4a`);
+      const audio = new Audio(`/audio/${langCode}/${key}.m4a`);
       audio.onplay = () => onStart?.();
       audio.onended = () => onEnd?.();
       audio.onerror = () => triggerFallback();
