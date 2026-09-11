@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { Home, Clock, TrendingDown, TrendingUp, Activity, AlertOctagon, CheckCircle, Calendar } from "lucide-react";
+import { Home, Clock, TrendingDown, TrendingUp, Activity, AlertOctagon, CheckCircle, Calendar, Upload, Image as ImageIcon, Database, Lock } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { getAllSessions, GameSession } from "../utils/db";
+import { getAllSessions, GameSession, saveMemory, getMemories, FamilyMemory } from "../utils/db";
+import { computeArmValues, DIFFICULTY_ARMS } from "../../lib/adaptiveDifficulty";
 import { translations, Language } from "../../i18n/translations";
 import { useDocumentLanguage } from "../../i18n/language";
 
@@ -19,6 +20,9 @@ function DashboardContent() {
   useDocumentLanguage(lang);
 
   const [sessions, setSessions] = useState<GameSession[]>([]);
+  const [memories, setMemories] = useState<FamilyMemory[]>([]);
+  const [newMemName, setNewMemName] = useState("");
+  const [newMemImage, setNewMemImage] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -26,6 +30,8 @@ function DashboardContent() {
       try {
         const data = await getAllSessions();
         setSessions(data);
+        const mems = await getMemories();
+        setMemories(mems);
       } catch (err) {
         console.error(err);
       } finally {
@@ -77,6 +83,26 @@ function DashboardContent() {
 
   const recentAccuracy = recentSessions.length > 0 ? recentSessions[recentSessions.length - 1].accuracy : 100;
   const requiresAttention = recentAccuracy < 70;
+  const armStats = computeArmValues(sessions);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      if (ev.target?.result) setNewMemImage(ev.target.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSaveMemory = async () => {
+    if (!newMemName || !newMemImage) return;
+    await saveMemory({ name: newMemName, image: newMemImage });
+    setNewMemName("");
+    setNewMemImage("");
+    const mems = await getMemories();
+    setMemories(mems);
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 p-6 md:p-10 font-sans">

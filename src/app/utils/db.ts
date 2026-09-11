@@ -2,6 +2,14 @@ import { openDB } from 'idb';
 
 const DB_NAME = 'SmritiSetu-DB';
 const STORE_NAME = 'game-sessions';
+const MEMORIES_STORE = 'memories';
+
+export interface FamilyMemory {
+  id?: number;
+  name: string;
+  image: string; // Base64 data URL
+  timestamp: number;
+}
 
 export interface GameSession {
   id?: number;
@@ -21,21 +29,19 @@ export interface GameSession {
 }
 
 export async function initDB() {
-  return openDB(DB_NAME, 2, {
+  return openDB(DB_NAME, 3, {
     upgrade(db, oldVersion, newVersion, transaction) {
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         const store = db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
         store.createIndex('syncStatus', 'syncStatus');
         store.createIndex('timestamp', 'timestamp');
       } else {
-        // Upgrade from v1 to v2 if needed (e.g. changing 'synced' to 'syncStatus')
         const store = transaction.objectStore(STORE_NAME);
-        if (!store.indexNames.contains('syncStatus')) {
-           store.createIndex('syncStatus', 'syncStatus');
-        }
-        if (!store.indexNames.contains('timestamp')) {
-           store.createIndex('timestamp', 'timestamp');
-        }
+        if (!store.indexNames.contains('syncStatus')) store.createIndex('syncStatus', 'syncStatus');
+        if (!store.indexNames.contains('timestamp')) store.createIndex('timestamp', 'timestamp');
+      }
+      if (!db.objectStoreNames.contains(MEMORIES_STORE)) {
+        db.createObjectStore(MEMORIES_STORE, { keyPath: 'id', autoIncrement: true });
       }
     },
   });
@@ -81,7 +87,7 @@ export async function processSyncQueue() {
         await tx.store.put(item);
       }
       await tx.done;
-    } catch (error) {
+    } catch (_) {
       const tx = db.transaction(STORE_NAME, 'readwrite');
       const item = await tx.store.get(session.id!);
       if (item) {
@@ -91,4 +97,20 @@ export async function processSyncQueue() {
       await tx.done;
     }
   }
+}
+
+
+export async function saveMemory(data: { name: string; image: string }) {
+  const db = await initDB();
+  await db.add(MEMORIES_STORE, { ...data, timestamp: Date.now() });
+}
+
+export async function getMemories(): Promise<FamilyMemory[]> {
+  const db = await initDB();
+  return db.getAll(MEMORIES_STORE);
+}
+
+export async function deleteMemory(id: number) {
+  const db = await initDB();
+  await db.delete(MEMORIES_STORE, id);
 }

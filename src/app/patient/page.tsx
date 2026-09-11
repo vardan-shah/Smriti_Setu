@@ -5,7 +5,8 @@ import { Coffee, Music, TreePine, Mountain, Moon, Sun, Home as HomeIcon, Droplet
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
-import { saveSessionLocally } from "../utils/db";
+import { saveSessionLocally, getAllSessions, getMemories, FamilyMemory } from "../utils/db";
+import { selectDifficulty } from "../../lib/adaptiveDifficulty";
 
 import { translations, Language } from "../../i18n/translations";
 import { useDocumentLanguage } from "../../i18n/language";
@@ -54,7 +55,7 @@ function PatientContent() {
   const [activeCardCount, setActiveCardCount] = useState<number>(6);
 
   // Initialize strictly with unshuffled cards to prevent SSR hydration mismatch.
-  const [cards, setCards] = useState(() => 
+  const [cards, setCards] = useState<any[]>(() => 
     [...CARD_POOL.slice(0, 6), ...CARD_POOL.slice(0, 6)].map((card, idx) => ({ ...card, uniqueId: idx }))
   );
   
@@ -63,6 +64,8 @@ function PatientContent() {
   const [win, setWin] = useState(false);
   const [isOnline, setIsOnline] = useState(() => typeof navigator !== "undefined" ? navigator.onLine : true);
   const [offlineMode, setOfflineMode] = useState(false);
+  const [aiRecommendedLevel, setAiRecommendedLevel] = useState<number | null>(null);
+  const [customMemories, setCustomMemories] = useState<FamilyMemory[]>([]);
   const [voiceState, setVoiceState] = useState<'idle' | 'playing' | 'unavailable'>('idle');
   const [startTime, setStartTime] = useState<number>(0);
   const [moves, setMoves] = useState(0);
@@ -79,7 +82,19 @@ function PatientContent() {
   const initializeGame = useCallback((diffToUse: number) => {
     if (reportTimeoutRef.current) clearTimeout(reportTimeoutRef.current);
     setActiveCardCount(diffToUse);
-    const pool = CARD_POOL.slice(0, Math.min(diffToUse, CARD_POOL.length));
+
+    // Transform custom memories into valid cards (mocking an icon component with an img tag)
+    const memCards = customMemories.map((m, i) => ({
+      icon: (props: any) => <img src={m.image} alt={m.name} className="w-12 h-12 object-cover rounded-full" {...props} />,
+      key: `mem_${m.id}`,
+      color: "bg-purple-100 text-purple-700",
+      customName: m.name
+    }));
+
+    // Inject custom memories first, then fill with default CARD_POOL
+    const combinedPool = [...memCards, ...CARD_POOL];
+    const pool = combinedPool.slice(0, Math.min(diffToUse, combinedPool.length));
+    
     setCards([...pool, ...pool].sort(() => Math.random() - 0.5).map((card, idx) => ({ ...card, uniqueId: idx })));
     setGamePhase('playing');
     setFlipped([]);
@@ -107,8 +122,14 @@ function PatientContent() {
       window.speechSynthesis.getVoices();
     }
 
-    // Ready the UI to let the user select their level
-    setTimeout(() => setIsReady(true), 0);
+    // Load AI recommendation and custom memories
+    Promise.all([getAllSessions(), getMemories()]).then(([sessions, mems]) => {
+      setAiRecommendedLevel(selectDifficulty(sessions));
+      setCustomMemories(mems);
+      setTimeout(() => setIsReady(true), 0);
+    }).catch(() => {
+      setTimeout(() => setIsReady(true), 0);
+    });
 
     return () => {
       window.removeEventListener("online", handleOnline);
@@ -167,7 +188,7 @@ function PatientContent() {
       return next;
     });
 
-    handleVoice(cardKey, t[cardKey] || cardKey);
+    handleVoice(cardKey, (cards[index] as any).customName || t[cardKey] || cardKey);
 
     const newFlipped = [...flipped, index];
     setFlipped(newFlipped);
@@ -244,8 +265,13 @@ function PatientContent() {
               onClick={() => {
                 initializeGame(lvl);
               }}
-              className="flex flex-col items-center justify-center p-8 bg-white rounded-3xl shadow-sm border-2 border-emerald-100 hover:border-emerald-500 hover:shadow-lg transition-all active:scale-95"
+              className={`relative flex flex-col items-center justify-center p-8 bg-white rounded-3xl shadow-sm border-2 transition-all active:scale-95 ${aiRecommendedLevel === lvl ? 'border-fuchsia-400 shadow-fuchsia-100 shadow-xl' : 'border-emerald-100 hover:border-emerald-500 hover:shadow-lg'}`}
             >
+              {aiRecommendedLevel === lvl && (
+                <div className="absolute -top-3 bg-fuchsia-500 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider animate-pulse">
+                  AI Suggested
+                </div>
+              )}
               <span className="text-4xl font-black text-slate-700 mb-2">{lvl}</span>
               <span className="text-sm font-medium text-slate-500 uppercase tracking-wider">{t.level || "Level"}</span>
             </button>

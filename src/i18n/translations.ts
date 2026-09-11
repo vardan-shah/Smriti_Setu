@@ -94,6 +94,15 @@ export const translations: Record<Language, Record<string, string>> = {
     playSuggested: "Play Suggested Level",
     playSame: "Play Same Level",
     chooseLevel: "Choose Level",
+    memoryVault: "Family Memory Vault",
+    uploadPhoto: "Upload Photo",
+    photoName: "Person's Name",
+    saveMemory: "Save Memory",
+    noMemories: "No memories added yet.",
+    relaySync: "Relay Sync Endpoint",
+    syncStatus: "Sync Status",
+    syncPending: "Pending Offline Sync",
+    syncSecure: "Secure Encrypted Push",
   },
   Assamese: {
     // Shared
@@ -188,6 +197,15 @@ export const translations: Record<Language, Record<string, string>> = {
     playSuggested: "পৰামৰ্শ দিয়া স্তৰ খেলক",
     playSame: "একে স্তৰ খেলক",
     chooseLevel: "স্তৰ বাছনি কৰক",
+    memoryVault: "পৰিয়ালৰ স্মৃতি ভঁৰাল",
+    uploadPhoto: "ফটো আপলোড কৰক",
+    photoName: "ব্যক্তিৰ নাম",
+    saveMemory: "স্মৃতি সংৰক্ষণ কৰক",
+    noMemories: "এতিয়ালৈ কোনো স্মৃতি যোগ কৰা হোৱা নাই।",
+    relaySync: "ৰিলে চিংক এণ্ডপইণ্ট",
+    syncStatus: "চিংকৰ স্থিতি",
+    syncPending: "অফলাইন চিংক বাকী আছে",
+    syncSecure: "সুৰক্ষিত এনক্ৰিপ্ট কৰা পুশ",
   },
   Bengali: {
     // Shared
@@ -282,6 +300,15 @@ export const translations: Record<Language, Record<string, string>> = {
     playSuggested: "প্রস্তাবিত স্তর খেলুন",
     playSame: "একই স্তর খেলুন",
     chooseLevel: "স্তর নির্বাচন করুন",
+    memoryVault: "পারিবারিক স্মৃতি ভল্ট",
+    uploadPhoto: "ফটো আপলোড করুন",
+    photoName: "ব্যক্তির নাম",
+    saveMemory: "স্মৃতি সংরক্ষণ করুন",
+    noMemories: "এখনও কোনও স্মৃতি যোগ করা হয়নি।",
+    relaySync: "রিলে সিঙ্ক এন্ডপয়েন্ট",
+    syncStatus: "সিঙ্ক স্ট্যাটাস",
+    syncPending: "অফলাইন সিঙ্ক বাকি আছে",
+    syncSecure: "সুরক্ষিত এনক্রিপ্ট করা পুশ",
   },
   Hindi: {
     // Shared
@@ -376,5 +403,14 @@ export const translations: Record<Language, Record<string, string>> = {
     playSuggested: "सुझाया गया स्तर खेलें",
     playSame: "समान स्तर खेलें",
     chooseLevel: "स्तर चुनें",
+    memoryVault: "पारिवारिक स्मृति वॉल्ट",
+    uploadPhoto: "फोटो अपलोड करें",
+    photoName: "व्यक्ति का नाम",
+    saveMemory: "स्मृति सहेजें",
+    noMemories: "अभी तक कोई यादें नहीं जोड़ी गईं।",
+    relaySync: "रिले सिंक एंडपॉइंट",
+    syncStatus: "सिंक स्थिति",
+    syncPending: "ऑफ़लाइन सिंक लंबित",
+    syncSecure: "सुरक्षित एन्क्रिप्टेड पुश",
   }
 };
