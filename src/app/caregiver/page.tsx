@@ -115,29 +115,13 @@ function DashboardContent() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-                <div className="p-4 bg-emerald-100 rounded-xl text-emerald-600"><CheckCircle className="w-8 h-8" /></div>
-                <div>
-                  <p className="text-slate-500 font-medium">{t.medAdherence} <span className="text-xs text-amber-600 font-bold">{t.demoOnly}</span></p>
-                  <h3 className="text-2xl font-bold text-slate-800">100%</h3>
-                </div>
-              </div>
-              <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 w-full md:w-1/3">
                 <div className="p-4 bg-blue-100 rounded-xl text-blue-600"><Clock className="w-8 h-8" /></div>
                 <div>
                   <p className="text-slate-500 font-medium">{t.avgGameTime}</p>
                   <h3 className="text-2xl font-bold text-slate-800">{avgTime} {t.mins}</h3>
                 </div>
               </div>
-              <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-                <div className="p-4 bg-purple-100 rounded-xl text-purple-600"><Calendar className="w-8 h-8" /></div>
-                <div>
-                  <p className="text-slate-500 font-medium">{t.nextClinic} <span className="text-xs text-amber-600 font-bold">{t.demoOnly}</span></p>
-                  <h3 className="text-2xl font-bold text-slate-800">{t.noData}</h3>
-                </div>
-              </div>
-            </div>
 
             {recentSessions.length > 0 && recentSessions[recentSessions.length - 1].biomarkers && (
               <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">

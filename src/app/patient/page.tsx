@@ -48,7 +48,7 @@ function PatientContent() {
   useDocumentLanguage(lang);
   const t = translations[lang];
 
-  const [difficulty, setDifficulty] = useState<number>(1);
+  const reportTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [gamePhase, setGamePhase] = useState<'selection' | 'playing' | 'report'>('selection');
   const [finalReport, setFinalReport] = useState<{accuracy: number, time: number, suggestion: number}>({accuracy: 0, time: 0, suggestion: 1});
   const [activeCardCount, setActiveCardCount] = useState<number>(6);
@@ -77,6 +77,7 @@ function PatientContent() {
   const [memoryLapses, setMemoryLapses] = useState<number>(0);
 
   const initializeGame = useCallback((diffToUse: number) => {
+    if (reportTimeoutRef.current) clearTimeout(reportTimeoutRef.current);
     setActiveCardCount(diffToUse);
     const pool = CARD_POOL.slice(0, Math.min(diffToUse, CARD_POOL.length));
     setCards([...pool, ...pool].sort(() => Math.random() - 0.5).map((card, idx) => ({ ...card, uniqueId: idx })));
@@ -217,7 +218,7 @@ function PatientContent() {
             if (accuracy > 85 && hesitationMs < 3000 && activeCardCount < 10) suggestion = activeCardCount + 1;
             else if ((accuracy < 60 || hesitationMs > 8000) && activeCardCount > 1) suggestion = activeCardCount - 1;
             setFinalReport({ accuracy, time: elapsed, suggestion });
-            setTimeout(() => setGamePhase('report'), 2000);
+            reportTimeoutRef.current = setTimeout(() => setGamePhase('report'), 2000);
           }
           return newMatched;
         });
@@ -241,7 +242,6 @@ function PatientContent() {
             <button
               key={lvl}
               onClick={() => {
-                setDifficulty(lvl);
                 initializeGame(lvl);
               }}
               className="flex flex-col items-center justify-center p-8 bg-white rounded-3xl shadow-sm border-2 border-emerald-100 hover:border-emerald-500 hover:shadow-lg transition-all active:scale-95"
@@ -276,8 +276,8 @@ function PatientContent() {
               <BrainIcon className="w-6 h-6" /> {t.suggestion || "Suggestion"}
             </p>
             <p className="text-indigo-600 text-lg">
-              {finalReport.suggestion > difficulty ? (t.suggestIncrease || "You did great! Try increasing the level.") : 
-               finalReport.suggestion < difficulty ? (t.suggestDecrease || "This was tough. Maybe try a lower level.") : 
+              {finalReport.suggestion > activeCardCount ? (t.suggestIncrease || "You did great! Try increasing the level.") : 
+               finalReport.suggestion < activeCardCount ? (t.suggestDecrease || "This was tough. Maybe try a lower level.") : 
                (t.suggestMaintain || "Good job! Keep practicing at this level.")}
             </p>
           </div>
@@ -286,8 +286,8 @@ function PatientContent() {
             <button onClick={() => initializeGame(finalReport.suggestion)} className="w-full py-4 bg-emerald-600 text-white rounded-2xl text-xl font-bold shadow-md hover:bg-emerald-700 active:scale-95 transition-all">
               {t.playSuggested || "Play Suggested Level"} ({(t.level || "Level")} {finalReport.suggestion})
             </button>
-            <button onClick={() => initializeGame(difficulty)} className="w-full py-4 bg-slate-100 text-slate-700 rounded-2xl text-xl font-bold hover:bg-slate-200 active:scale-95 transition-all">
-              {t.playSame || "Play Same Level"} ({(t.level || "Level")} {difficulty})
+            <button onClick={() => initializeGame(activeCardCount)} className="w-full py-4 bg-slate-100 text-slate-700 rounded-2xl text-xl font-bold hover:bg-slate-200 active:scale-95 transition-all">
+              {t.playSame || "Play Same Level"} ({(t.level || "Level")} {activeCardCount})
             </button>
             <button onClick={() => setGamePhase('selection')} className="w-full py-4 bg-transparent text-slate-500 hover:text-slate-700 rounded-2xl text-lg font-medium transition-colors">
               {t.chooseLevel || "Choose Level"}
@@ -376,7 +376,7 @@ function PatientContent() {
               <h2 className="text-5xl md:text-6xl font-black text-emerald-600">{t.greatJob || "Great Job!"}</h2>
               <p className="text-2xl md:text-3xl text-slate-600 font-medium">{t.matchedAll || "Matched All"}</p>
               <button 
-                onClick={() => initializeGame(difficulty)}
+                onClick={() => initializeGame(activeCardCount)}
                 className="mt-8 flex items-center gap-4 px-8 py-5 md:px-12 md:py-6 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full text-3xl md:text-4xl font-bold shadow-xl active:scale-95 transition-all"
               >
                 <RefreshCcw className="w-8 h-8 md:w-10 md:h-10" /> {t.playAgain || "Play Again"}
