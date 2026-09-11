@@ -39,7 +39,7 @@ export default function Home() {
         </div>
 
         <div className="grid md:grid-cols-2 gap-8">
-          <Link href={`/patient?lang=${lang}`} 
+          <a href={`/patient?lang=${lang}`} 
             className="group relative flex flex-col items-center p-10 bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-300 border-2 border-emerald-100 hover:border-emerald-500 overflow-hidden"
           >
             <div className="absolute inset-0 bg-emerald-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -50,9 +50,9 @@ export default function Home() {
             <p className="text-slate-500 mt-4 relative z-10 text-lg">
               {t.patientDesc}
             </p>
-          </Link>
+          </a>
 
-          <Link href={`/caregiver?lang=${lang}`} 
+          <a href={`/caregiver?lang=${lang}`} 
             className="group relative flex flex-col items-center p-10 bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-300 border-2 border-indigo-100 hover:border-indigo-500 overflow-hidden"
           >
             <div className="absolute inset-0 bg-indigo-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -63,7 +63,7 @@ export default function Home() {
             <p className="text-slate-500 mt-4 relative z-10 text-lg">
               {t.caregiverDesc}
             </p>
-          </Link>
+          </a>
         </div>
         
         <div className="pt-8">
