@@ -1,24 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { Home, Clock, TrendingDown, TrendingUp, Activity, AlertOctagon } from "lucide-react";
+import { Home, Clock, TrendingDown, TrendingUp, Activity, AlertOctagon, CheckCircle, Calendar } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { getAllSessions, GameSession } from "../utils/db";
 import { computeArmValues, DIFFICULTY_ARMS } from "../../lib/adaptiveDifficulty";
 import { translations, Language } from "../../i18n/translations";
 import { useDocumentLanguage } from "../../i18n/language";
 
 function DashboardContent() {
-  const [lang, setLang] = useState<Language>(() => {
-    if (typeof window !== "undefined") {
-      const urlLang = new URLSearchParams(window.location.search).get("lang");
-      if (urlLang && translations[urlLang as Language]) {
-        return urlLang as Language;
-      }
-    }
-    return "English";
-  });
+  const searchParams = useSearchParams();
+  const urlLang = searchParams.get("lang") as Language;
+  const lang = (urlLang && translations[urlLang]) ? urlLang : "English";
 
   const t = translations[lang];
 
@@ -121,13 +116,29 @@ function DashboardContent() {
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 w-full md:w-1/3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+                <div className="p-4 bg-emerald-100 rounded-xl text-emerald-600"><CheckCircle className="w-8 h-8" /></div>
+                <div>
+                  <p className="text-slate-500 font-medium">{t.medAdherence} <span className="text-xs text-amber-600 font-bold">{t.demoOnly}</span></p>
+                  <h3 className="text-2xl font-bold text-slate-800">100%</h3>
+                </div>
+              </div>
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
                 <div className="p-4 bg-blue-100 rounded-xl text-blue-600"><Clock className="w-8 h-8" /></div>
                 <div>
                   <p className="text-slate-500 font-medium">{t.avgGameTime}</p>
                   <h3 className="text-2xl font-bold text-slate-800">{avgTime} {t.mins}</h3>
                 </div>
               </div>
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+                <div className="p-4 bg-purple-100 rounded-xl text-purple-600"><Calendar className="w-8 h-8" /></div>
+                <div>
+                  <p className="text-slate-500 font-medium">{t.nextClinic} <span className="text-xs text-amber-600 font-bold">{t.demoOnly}</span></p>
+                  <h3 className="text-2xl font-bold text-slate-800">{t.noData}</h3>
+                </div>
+              </div>
+            </div>
 
             {recentSessions.length > 0 && recentSessions[recentSessions.length - 1].biomarkers && (
               <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">

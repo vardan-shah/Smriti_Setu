@@ -1,25 +1,21 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { WifiOff, Database, RefreshCw, Check } from "lucide-react";
 import { getPendingSessions, processSyncQueue } from "../app/utils/db";
 import { translations, Language } from "../i18n/translations";
 
 
-export function OfflineIndicator() {
+function OfflineIndicatorContent() {
   const [isOnline, setIsOnline] = useState(() => typeof navigator !== "undefined" ? navigator.onLine : true);
   const [pendingCount, setPendingCount] = useState(0);
   const [syncState, setSyncState] = useState<'idle' | 'syncing' | 'synced' | 'failed'>('idle');
 
   // We fetch language loosely here without suspense wrapper since it's just a floating widget
   // and we don't want to break the entire layout. It uses window location as a fallback.
-  const [lang, setLang] = useState<Language>(() => {
-    if (typeof window !== "undefined") {
-      const url = new URL(window.location.href);
-      const urlLang = url.searchParams.get("lang") as Language;
-      if (urlLang && translations[urlLang]) return urlLang;
-    }
-    return "English";
-  });
+  const searchParams = useSearchParams();
+  const urlLang = searchParams.get("lang") as Language;
+  const lang = (urlLang && translations[urlLang]) ? urlLang : "English";
 
   const t = translations[lang];
 
@@ -91,5 +87,14 @@ export function OfflineIndicator() {
         </span>
       )}
     </div>
+  );
+}
+
+
+export function OfflineIndicator() {
+  return (
+    <Suspense fallback={null}>
+      <OfflineIndicatorContent />
+    </Suspense>
   );
 }

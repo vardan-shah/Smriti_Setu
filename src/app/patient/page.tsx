@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Coffee, Music, TreePine, Mountain, Moon, Sun, Home as HomeIcon, Droplet, Pill, Volume2, Wifi, WifiOff, RefreshCcw, AlertCircle, CloudRain, Flower2 } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import { saveSessionLocally } from "../utils/db";
 import { selectDifficulty } from "../../lib/adaptiveDifficulty";
 import { translations, Language } from "../../i18n/translations";
@@ -36,16 +38,10 @@ function BrainIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
-export default function PatientView() {
-  const [lang, setLang] = useState<Language>(() => {
-    if (typeof window !== "undefined") {
-      const urlLang = new URLSearchParams(window.location.search).get("lang");
-      if (urlLang && translations[urlLang as Language]) {
-        return urlLang as Language;
-      }
-    }
-    return "English";
-  });
+function PatientContent() {
+  const searchParams = useSearchParams();
+  const urlLang = searchParams.get("lang") as Language;
+  const lang = (urlLang && translations[urlLang]) ? urlLang : "English";
 
   useDocumentLanguage(lang);
   const t = translations[lang];
@@ -353,5 +349,14 @@ export default function PatientView() {
         </div>
       </div>
     </div>
+  );
+}
+
+
+export default function PatientView() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-50 p-6">Loading...</div>}>
+      <PatientContent />
+    </Suspense>
   );
 }
