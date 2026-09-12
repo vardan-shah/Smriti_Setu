@@ -216,16 +216,9 @@ function DashboardContent() {
           </button>
           
           {pinMode === 'login' && (
-            <button
-              onClick={() => {
-                setPinError("");
-                setPinInput("");
-                setPinMode('setup');
-              }}
-              className="w-full mt-4 py-2 text-slate-500 font-medium hover:text-slate-700 transition-colors"
-            >
-              Forgot PIN? Reset dashboard
-            </button>
+            <p className="mt-6 text-xs text-slate-400 leading-relaxed max-w-[280px] mx-auto">
+              Forgot your PIN? For security, it cannot be recovered. To reset, you must clear this site&apos;s data in your browser settings, which will permanently delete all stored sessions and memories.
+            </p>
           )}
         </div>
       </div>
