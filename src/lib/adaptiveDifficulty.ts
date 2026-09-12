@@ -10,7 +10,7 @@
 
 import { GameSession } from "../app/utils/db";
 
-export const DIFFICULTY_ARMS = [4, 6, 8] as const;
+export const DIFFICULTY_ARMS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 export type DifficultyArm = (typeof DIFFICULTY_ARMS)[number];
 
 const LEARNING_RATE = 0.3; // how fast Q-values move toward new evidence

@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { Home, Clock, TrendingDown, TrendingUp, Activity, AlertOctagon, CheckCircle, Calendar, Upload, Image as ImageIcon, Database, Lock } from "lucide-react";
+import { Home, Clock, TrendingDown, TrendingUp, Activity, AlertOctagon, CheckCircle, Calendar, Upload, Image as ImageIcon, Database, Lock, X } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { getAllSessions, GameSession, saveMemory, getMemories, FamilyMemory } from "../utils/db";
+import { getAllSessions, GameSession, saveMemory, getMemories, FamilyMemory, getPendingSessions, deleteMemory } from "../utils/db";
 import { computeArmValues, DIFFICULTY_ARMS } from "../../lib/adaptiveDifficulty";
 import { translations, Language } from "../../i18n/translations";
 import { useDocumentLanguage } from "../../i18n/language";
@@ -23,6 +23,7 @@ function DashboardContent() {
   const [memories, setMemories] = useState<FamilyMemory[]>([]);
   const [newMemName, setNewMemName] = useState("");
   const [newMemImage, setNewMemImage] = useState("");
+  const [pendingSyncCount, setPendingSyncCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,6 +33,8 @@ function DashboardContent() {
         setSessions(data);
         const mems = await getMemories();
         setMemories(mems);
+        const pending = await getPendingSessions();
+        setPendingSyncCount(pending.length);
       } catch (err) {
         console.error(err);
       } finally {
@@ -93,6 +96,12 @@ function DashboardContent() {
       if (ev.target?.result) setNewMemImage(ev.target.result as string);
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleDeleteMemory = async (id: number) => {
+    await deleteMemory(id);
+    const mems = await getMemories();
+    setMemories(mems);
   };
 
   const handleSaveMemory = async () => {
@@ -252,6 +261,9 @@ function DashboardContent() {
                       memories.map(m => (
                         <div key={m.id} className="flex-shrink-0 relative group">
                           <img src={m.image} alt={m.name} className="w-24 h-24 object-cover rounded-2xl shadow-md border-2 border-white" />
+                          <button onClick={() => handleDeleteMemory(m.id!)} className="absolute -top-2 -right-2 bg-rose-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-rose-600">
+                            <X className="w-4 h-4" />
+                          </button>
                           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-2 rounded-b-2xl">
                             <p className="text-white text-xs font-bold truncate text-center">{m.name}</p>
                           </div>
@@ -262,25 +274,18 @@ function DashboardContent() {
                 </div>
               </div>
 
-              {/* Relay Sync Endpoint */}
-              <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
-                  <Database className="w-6 h-6 text-emerald-500"/> {t.relaySync || "Relay Sync Endpoint"}
-                </h2>
-                <div className="p-6 bg-slate-900 rounded-2xl font-mono text-sm shadow-inner relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-4 opacity-10">
-                    <Lock className="w-24 h-24 text-white" />
-                  </div>
-                  <p className="text-emerald-400 mb-2">&gt; CONNECTION: <span className="text-white">SECURE (TLS v1.3)</span></p>
-                  <p className="text-emerald-400 mb-2">&gt; ENDPOINT: <span className="text-white">wss://api.smritisetu.health/relay</span></p>
-                  <p className="text-emerald-400 mb-6">&gt; ENCRYPTION: <span className="text-white">AES-256-GCM (End-to-End)</span></p>
-                  
-                  <div className="flex items-center gap-4 mt-8 pt-6 border-t border-slate-700">
-                    <div className="flex-1 bg-slate-800 h-3 rounded-full overflow-hidden relative">
-                      <div className="absolute inset-y-0 left-0 bg-emerald-500 w-1/3 animate-pulse rounded-full" />
-                    </div>
-                    <span className="text-slate-300 font-bold uppercase text-xs tracking-wider">{t.syncPending || "Pending Offline Sync"}</span>
-                  </div>
+              {/* Local Sync Status */}
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-center items-center text-center">
+                <Database className="w-12 h-12 text-slate-300 mb-4" />
+                <h2 className="text-2xl font-bold text-slate-800 mb-2">Local Storage</h2>
+                <p className="text-slate-500 mb-6 max-w-xs">
+                  {pendingSyncCount} session{pendingSyncCount !== 1 ? 's' : ''} stored securely on this device, waiting to be synced when connected.
+                </p>
+                <div className="w-full bg-slate-100 h-4 rounded-full overflow-hidden relative">
+                   <div className="absolute inset-y-0 left-0 bg-emerald-400 w-full animate-pulse opacity-50" />
+                   <div className="absolute inset-0 flex items-center justify-center">
+                     <span className="text-[10px] font-black text-emerald-800 uppercase tracking-widest">{t.syncPending || "Pending Sync"}</span>
+                   </div>
                 </div>
               </div>
             </div>

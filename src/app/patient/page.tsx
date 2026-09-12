@@ -143,7 +143,7 @@ function PatientContent() {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
-  }, [initializeGame]);
+  }, []);
 
   const handleVoice = (key: string, text: string) => {
     if (voiceState === 'playing') return;
