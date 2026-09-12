@@ -62,11 +62,9 @@ function isDifficultyArm(n: number): n is DifficultyArm {
 export function computeArmValues(
   sessions: GameSession[]
 ): Record<DifficultyArm, ArmStats> {
-  const stats: Record<DifficultyArm, ArmStats> = {
-    4: { qValue: 0.5, count: 0 },
-    6: { qValue: 0.5, count: 0 },
-    8: { qValue: 0.5, count: 0 },
-  };
+  const stats = Object.fromEntries(
+    DIFFICULTY_ARMS.map(arm => [arm, { qValue: 0.5, count: 0 }])
+  ) as Record<DifficultyArm, ArmStats>;
 
   for (const session of sessions) {
     if (!isDifficultyArm(session.matches)) continue; // ignore malformed/legacy rows safely
