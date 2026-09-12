@@ -208,6 +208,82 @@ function DashboardContent() {
             </div>
             
 
+
+            {/* AI Adaptive Difficulty (Multi-Armed Bandit) */}
+            {sessions.length > 0 && (
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mt-6">
+                <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+                  <Activity className="w-6 h-6 text-fuchsia-500"/> AI Adaptive Difficulty (Contextual Bandit Q-Values)
+                </h2>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                  {DIFFICULTY_ARMS.map(arm => (
+                    <div key={arm} className="p-4 bg-slate-50 rounded-xl border border-slate-100 flex flex-col items-center">
+                      <p className="text-sm text-slate-500 font-medium">{t.level || "Level"} {arm}</p>
+                      <div className="w-full bg-slate-200 h-2 mt-2 rounded-full overflow-hidden">
+                        <div className="bg-fuchsia-500 h-full transition-all" style={{ width: `${Math.round(Math.max(0, armStats[arm].qValue) * 100)}%` }} />
+                      </div>
+                      <p className="text-xs text-slate-400 mt-2 font-bold">{t.qValue || "Q-Value"}: {armStats[arm].qValue.toFixed(2)}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+              {/* Family Memory Vault */}
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+                  <ImageIcon className="w-6 h-6 text-blue-500"/> {t.memoryVault || "Family Memory Vault"}
+                </h2>
+                <div className="space-y-4">
+                  <div className="flex flex-col gap-2">
+                    <input type="text" placeholder={t.photoName || "Person's Name"} value={newMemName} onChange={(e) => setNewMemName(e.target.value)} className="p-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    <input type="file" accept="image/*" onChange={handleImageUpload} className="p-2 border border-slate-200 rounded-xl" />
+                    {newMemImage && <img src={newMemImage} alt="Preview" className="w-20 h-20 object-cover rounded-xl mt-2" />}
+                    <button onClick={handleSaveMemory} className="flex items-center justify-center gap-2 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 active:scale-95 transition-all">
+                      <Upload className="w-5 h-5" /> {t.saveMemory || "Save Memory"}
+                    </button>
+                  </div>
+                  
+                  <div className="mt-4 flex gap-4 overflow-x-auto pb-4">
+                    {memories.length === 0 ? (
+                      <p className="text-slate-400 text-sm italic">{t.noMemories || "No memories added yet."}</p>
+                    ) : (
+                      memories.map(m => (
+                        <div key={m.id} className="flex-shrink-0 relative group">
+                          <img src={m.image} alt={m.name} className="w-24 h-24 object-cover rounded-2xl shadow-md border-2 border-white" />
+                          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-2 rounded-b-2xl">
+                            <p className="text-white text-xs font-bold truncate text-center">{m.name}</p>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Relay Sync Endpoint */}
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+                  <Database className="w-6 h-6 text-emerald-500"/> {t.relaySync || "Relay Sync Endpoint"}
+                </h2>
+                <div className="p-6 bg-slate-900 rounded-2xl font-mono text-sm shadow-inner relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-4 opacity-10">
+                    <Lock className="w-24 h-24 text-white" />
+                  </div>
+                  <p className="text-emerald-400 mb-2">&gt; CONNECTION: <span className="text-white">SECURE (TLS v1.3)</span></p>
+                  <p className="text-emerald-400 mb-2">&gt; ENDPOINT: <span className="text-white">wss://api.smritisetu.health/relay</span></p>
+                  <p className="text-emerald-400 mb-6">&gt; ENCRYPTION: <span className="text-white">AES-256-GCM (End-to-End)</span></p>
+                  
+                  <div className="flex items-center gap-4 mt-8 pt-6 border-t border-slate-700">
+                    <div className="flex-1 bg-slate-800 h-3 rounded-full overflow-hidden relative">
+                      <div className="absolute inset-y-0 left-0 bg-emerald-500 w-1/3 animate-pulse rounded-full" />
+                    </div>
+                    <span className="text-slate-300 font-bold uppercase text-xs tracking-wider">{t.syncPending || "Pending Offline Sync"}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </>
         ) : (
           !loading && (

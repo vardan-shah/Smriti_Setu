@@ -12,6 +12,14 @@ import { translations, Language } from "../../i18n/translations";
 import { useDocumentLanguage } from "../../i18n/language";
 import { playVoicePrompt } from "../../i18n/voice";
 
+type CardType = {
+  uniqueId?: number;
+  icon: React.ElementType;
+  key: string;
+  color: string;
+  customName?: string;
+};
+
 const CARD_POOL = [
   { icon: Coffee, key: "tea", color: "bg-amber-100 text-amber-700" },
   { icon: Music, key: "music", color: "bg-rose-100 text-rose-700" },
@@ -55,7 +63,7 @@ function PatientContent() {
   const [activeCardCount, setActiveCardCount] = useState<number>(6);
 
   // Initialize strictly with unshuffled cards to prevent SSR hydration mismatch.
-  const [cards, setCards] = useState<any[]>(() => 
+  const [cards, setCards] = useState<CardType[]>(() => 
     [...CARD_POOL.slice(0, 6), ...CARD_POOL.slice(0, 6)].map((card, idx) => ({ ...card, uniqueId: idx }))
   );
   
@@ -84,8 +92,8 @@ function PatientContent() {
     setActiveCardCount(diffToUse);
 
     // Transform custom memories into valid cards (mocking an icon component with an img tag)
-    const memCards = customMemories.map((m, i) => ({
-      icon: (props: any) => <img src={m.image} alt={m.name} className="w-12 h-12 object-cover rounded-full" {...props} />,
+    const memCards = customMemories.map((m) => ({
+      icon: (props: React.ImgHTMLAttributes<HTMLImageElement>) => <img src={m.image} alt={m.name} className="w-12 h-12 object-cover rounded-full" {...props} />,
       key: `mem_${m.id}`,
       color: "bg-purple-100 text-purple-700",
       customName: m.name
@@ -110,7 +118,7 @@ function PatientContent() {
     setLastClickTime(0);
     setSeenCards(new Set());
     setMemoryLapses(0);
-  }, []);
+  }, [customMemories]);
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -188,7 +196,7 @@ function PatientContent() {
       return next;
     });
 
-    handleVoice(cardKey, (cards[index] as any).customName || t[cardKey] || cardKey);
+    handleVoice(cardKey, (cards[index] as CardType).customName || t[cardKey] || cardKey);
 
     const newFlipped = [...flipped, index];
     setFlipped(newFlipped);
