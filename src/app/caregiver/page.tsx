@@ -156,6 +156,9 @@ function DashboardContent() {
         setMemories(mems);
         const pending = await getPendingSessions();
         setPendingSyncCount(pending.length);
+      } catch (err) {
+        console.error("Data load error:", err);
+        setPinError("Decryption failed. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -175,6 +178,9 @@ function DashboardContent() {
           setMemories(mems);
           const pending = await getPendingSessions();
           setPendingSyncCount(pending.length);
+        } catch (err) {
+          console.error("Data load error:", err);
+          setPinError("Decryption failed. Please try again.");
         } finally {
           setLoading(false);
         }

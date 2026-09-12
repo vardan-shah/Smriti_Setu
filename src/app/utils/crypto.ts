@@ -1,12 +1,22 @@
 export async function getOrCreateAESKey(): Promise<CryptoKey> {
   const stored = localStorage.getItem('app_aes_key');
   if (stored) {
-    const jwk = JSON.parse(stored);
-    return crypto.subtle.importKey("jwk", jwk, { name: "AES-GCM", length: 256 }, true, ["encrypt", "decrypt"]);
+    try {
+      if (stored.startsWith('{')) {
+        const jwk = JSON.parse(stored);
+        return await crypto.subtle.importKey("jwk", jwk, { name: "AES-GCM", length: 256 }, true, ["encrypt", "decrypt"]);
+      } else {
+        const rawBuffer = new Uint8Array(stored.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16)));
+        return await crypto.subtle.importKey("raw", rawBuffer, { name: "AES-GCM", length: 256 }, true, ["encrypt", "decrypt"]);
+      }
+    } catch (e) {
+      console.error("Key import failed, generating new key", e);
+    }
   }
   const key = await crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, true, ["encrypt", "decrypt"]);
-  const jwk = await crypto.subtle.exportKey("jwk", key);
-  localStorage.setItem('app_aes_key', JSON.stringify(jwk));
+  const raw = await crypto.subtle.exportKey("raw", key);
+  const rawHex = Array.from(new Uint8Array(raw)).map(b => b.toString(16).padStart(2, '0')).join('');
+  localStorage.setItem('app_aes_key', rawHex);
   return key;
 }
 
