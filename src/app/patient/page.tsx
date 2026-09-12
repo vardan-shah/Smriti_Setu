@@ -5,7 +5,7 @@ import { Coffee, Music, TreePine, Mountain, Moon, Sun, Home as HomeIcon, Droplet
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
-import { saveSessionLocally, getAllSessions, getMemories, FamilyMemory } from "../utils/db";
+import { saveSessionLocally, getAllSessions, getMemories, FamilyMemory, logMedicationTap } from "../utils/db";
 import { selectDifficulty } from "../../lib/adaptiveDifficulty";
 
 import { translations, Language } from "../../i18n/translations";
@@ -375,7 +375,7 @@ function PatientContent() {
               <span className="text-2xl font-bold text-left">{t.water || "Water"}</span>
             </button>
             <button 
-              onClick={() => handleVoice('meds', t.meds || "Meds")}
+              onClick={() => { handleVoice('meds', t.meds || "Meds"); logMedicationTap().catch(console.error); }}
               disabled={voiceState === 'playing'}
               className="w-full flex items-center gap-4 p-4 rounded-2xl bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors border-2 border-rose-200 active:scale-95 disabled:opacity-50"
             >

@@ -4,6 +4,7 @@ import { getOrCreateAESKey, encryptData, decryptData } from './crypto';
 const DB_NAME = 'SmritiSetu-DB';
 const STORE_NAME = 'game-sessions';
 const MEMORIES_STORE = 'memories';
+const MEDICATIONS_STORE = 'medication-log';
 
 export interface FamilyMemory {
   id?: number;
@@ -34,7 +35,7 @@ export interface GameSession {
 }
 
 export async function initDB() {
-  return openDB(DB_NAME, 3, {
+  return openDB(DB_NAME, 4, {
     upgrade(db, oldVersion, newVersion, transaction) {
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         const store = db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
@@ -47,6 +48,9 @@ export async function initDB() {
       }
       if (!db.objectStoreNames.contains(MEMORIES_STORE)) {
         db.createObjectStore(MEMORIES_STORE, { keyPath: 'id', autoIncrement: true });
+      }
+      if (!db.objectStoreNames.contains(MEDICATIONS_STORE)) {
+        db.createObjectStore(MEDICATIONS_STORE, { keyPath: 'id', autoIncrement: true });
       }
     },
   });
@@ -178,4 +182,63 @@ export async function getMemories(): Promise<FamilyMemory[]> {
 export async function deleteMemory(id: number) {
   const db = await initDB();
   await db.delete(MEMORIES_STORE, id);
+}
+
+
+export async function logMedicationTap() {
+  const db = await initDB();
+  const timestamp = Date.now();
+  const data = { timestamp, type: 'medication' };
+
+  if (typeof window !== 'undefined') {
+    try {
+      const key = await getOrCreateAESKey();
+      const { cipherText, iv } = await encryptData(data, key);
+      await db.add(MEDICATIONS_STORE, { encryptedData: cipherText, iv, timestamp });
+      return;
+    } catch (e) {
+      console.error('Encryption failed', e);
+    }
+  }
+  await db.add(MEDICATIONS_STORE, { timestamp });
+}
+
+export async function getMedicationAdherence(): Promise<{ adherence: number | null, empty: boolean }> {
+  const db = await initDB();
+  const allRaw = await db.getAll(MEDICATIONS_STORE);
+
+  const decrypted = await Promise.all(allRaw.map(async (item) => {
+    const record = item as { encryptedData?: string; iv?: string; id?: number; timestamp?: number };
+    if (record.encryptedData && record.iv && typeof window !== 'undefined') {
+      try {
+        const key = await getOrCreateAESKey();
+        const dec = await decryptData(record.encryptedData, record.iv, key);
+        return { ...(dec as { timestamp: number; type: string }), id: record.id, timestamp: record.timestamp };
+      } catch (e) {
+        return null;
+      }
+    }
+    return item;
+  }));
+
+  const valid = decrypted.filter(Boolean) as { timestamp: number }[];
+  if (valid.length === 0) return { adherence: null, empty: true };
+
+  const daysWithTap = new Set<string>();
+  let firstTap = Infinity;
+
+  for (const log of valid) {
+    if (log.timestamp < firstTap) firstTap = log.timestamp;
+    const dateStr = new Date(log.timestamp).toLocaleDateString();
+    daysWithTap.add(dateStr);
+  }
+
+  const today = new Date().setHours(0,0,0,0);
+  const firstDay = new Date(firstTap).setHours(0,0,0,0);
+  const msPerDay = 1000 * 60 * 60 * 24;
+  
+  const daysSinceFirst = Math.max(1, Math.floor((today - firstDay) / msPerDay) + 1);
+  const adherence = Math.min(100, Math.round((daysWithTap.size / daysSinceFirst) * 100));
+
+  return { adherence, empty: false };
 }

@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { Home, Clock, TrendingDown, TrendingUp, Activity, AlertOctagon, Upload, Image as ImageIcon, Database, X, Lock } from "lucide-react";
+import { Home, Clock, TrendingDown, TrendingUp, Activity, AlertOctagon, Upload, Image as ImageIcon, Database, X, Lock, CheckCircle } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { getAllSessions, GameSession, saveMemory, getMemories, FamilyMemory, getPendingSessions, deleteMemory } from "../utils/db";
+import { getAllSessions, GameSession, saveMemory, getMemories, FamilyMemory, getPendingSessions, deleteMemory, getMedicationAdherence } from "../utils/db";
 import { computeArmValues, DIFFICULTY_ARMS } from "../../lib/adaptiveDifficulty";
 import { hashPin } from "../utils/crypto";
 import { translations, Language } from "../../i18n/translations";
@@ -25,6 +25,7 @@ function DashboardContent() {
   const [newMemName, setNewMemName] = useState("");
   const [newMemImage, setNewMemImage] = useState("");
   const [pendingSyncCount, setPendingSyncCount] = useState(0);
+  const [adherenceData, setAdherenceData] = useState<{ adherence: number | null, empty: boolean }>({ adherence: null, empty: true });
   const [loading, setLoading] = useState(true);
   const [pinMode, setPinMode] = useState<'setup' | 'login' | 'unlocked'>('unlocked');
   const [pinInput, setPinInput] = useState("");
@@ -55,6 +56,8 @@ function DashboardContent() {
         setMemories(mems);
         const pending = await getPendingSessions();
         setPendingSyncCount(pending.length);
+        const adherence = await getMedicationAdherence();
+        setAdherenceData(adherence);
       } catch (err) {
         console.error(err);
       } finally {
@@ -178,6 +181,8 @@ function DashboardContent() {
           setMemories(mems);
           const pending = await getPendingSessions();
           setPendingSyncCount(pending.length);
+          const adherence = await getMedicationAdherence();
+          setAdherenceData(adherence);
         } catch (err) {
           console.error("Data load error:", err);
           setPinError("Decryption failed. Please try again.");
@@ -356,7 +361,7 @@ function DashboardContent() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
               {/* Family Memory Vault */}
               <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
                 <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
@@ -404,6 +409,21 @@ function DashboardContent() {
                    <div className="absolute inset-0 flex items-center justify-center">
                      <span className="text-[10px] font-black text-emerald-800 uppercase tracking-widest">{t.syncPending || "Pending Sync"}</span>
                    </div>
+                </div>
+              </div>
+              {/* Medication Adherence */}
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-center items-center text-center">
+                <CheckCircle className="w-12 h-12 text-emerald-400 mb-4" />
+                <h2 className="text-2xl font-bold text-slate-800 mb-2">{t.medAdherence || "Medication Adherence"}</h2>
+                <div className="flex flex-col items-center justify-center h-full">
+                  {adherenceData.empty ? (
+                    <p className="text-slate-500 italic">No medication reminders logged yet</p>
+                  ) : (
+                    <>
+                      <h3 className="text-5xl font-black text-emerald-600 mb-2">{adherenceData.adherence}%</h3>
+                      <p className="text-sm text-slate-400 font-medium uppercase tracking-wide">Consistency Rate</p>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
