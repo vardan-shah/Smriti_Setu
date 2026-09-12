@@ -39,14 +39,14 @@ function DashboardContent() {
         return;
       }
       
-      const storedPin = localStorage.getItem('app_pin');
-      if (!storedPin) {
+      // We don't store plain PIN anymore. Always require login on fresh load.
+      // But we can check sessionStorage if we want to avoid re-prompting on refresh.
+      const sessionUnlocked = sessionStorage.getItem('dashboard_unlocked');
+      if (!sessionUnlocked) {
         setPinMode('login');
         setLoading(false);
         return;
       }
-      
-      // Assume unlocked if plain pin is in memory
       setPinMode('unlocked');
       try {
         const data = await getAllSessions();
@@ -144,7 +144,7 @@ function DashboardContent() {
       const salt = Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b => b.toString(16).padStart(2, '0')).join('');
       localStorage.setItem('app_pin_hash', hash);
       localStorage.setItem('app_salt', salt);
-      localStorage.setItem('app_pin', pinInput);
+      sessionStorage.setItem('dashboard_unlocked', 'true');
       setPinMode('unlocked');
       setLoading(true);
       
@@ -163,7 +163,7 @@ function DashboardContent() {
       const hash = await hashPin(pinInput);
       const storedHash = localStorage.getItem('app_pin_hash');
       if (hash === storedHash) {
-        localStorage.setItem('app_pin', pinInput); // Store for this session
+        sessionStorage.setItem('dashboard_unlocked', 'true'); // Store for this session
         setPinMode('unlocked');
         setPinError("");
         setLoading(true);
@@ -212,8 +212,21 @@ function DashboardContent() {
             onClick={handlePinSubmit}
             className="w-full py-4 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 active:scale-95 transition-all"
           >
-            {pinMode === 'setup' ? "Set PIN & Encrypt" : "Unlock"}
+            {pinMode === 'setup' ? "Set PIN" : "Unlock"}
           </button>
+          
+          {pinMode === 'login' && (
+            <button
+              onClick={() => {
+                setPinError("");
+                setPinInput("");
+                setPinMode('setup');
+              }}
+              className="w-full mt-4 py-2 text-slate-500 font-medium hover:text-slate-700 transition-colors"
+            >
+              Forgot PIN? Reset dashboard
+            </button>
+          )}
         </div>
       </div>
     );

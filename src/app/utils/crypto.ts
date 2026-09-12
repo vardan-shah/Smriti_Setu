@@ -1,28 +1,15 @@
-export async function deriveKey(pin: string, saltHex: string): Promise<CryptoKey> {
-  const enc = new TextEncoder();
-  const keyMaterial = await crypto.subtle.importKey(
-    "raw",
-    enc.encode(pin),
-    { name: "PBKDF2" },
-    false,
-    ["deriveKey"]
-  );
-
-  const salt = new Uint8Array(saltHex.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16)));
-
-  return crypto.subtle.deriveKey(
-    {
-      name: "PBKDF2",
-      salt: salt,
-      iterations: 100000,
-      hash: "SHA-256"
-    },
-    keyMaterial,
-    { name: "AES-GCM", length: 256 },
-    false,
-    ["encrypt", "decrypt"]
-  );
+export async function getOrCreateAESKey(): Promise<CryptoKey> {
+  const stored = localStorage.getItem('app_aes_key');
+  if (stored) {
+    const jwk = JSON.parse(stored);
+    return crypto.subtle.importKey("jwk", jwk, { name: "AES-GCM", length: 256 }, true, ["encrypt", "decrypt"]);
+  }
+  const key = await crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, true, ["encrypt", "decrypt"]);
+  const jwk = await crypto.subtle.exportKey("jwk", key);
+  localStorage.setItem('app_aes_key', JSON.stringify(jwk));
+  return key;
 }
+
 
 export async function encryptData(data: unknown, key: CryptoKey): Promise<{ cipherText: string, iv: string }> {
   const enc = new TextEncoder();

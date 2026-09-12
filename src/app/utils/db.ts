@@ -1,5 +1,5 @@
 import { openDB } from 'idb';
-import { deriveKey, encryptData, decryptData } from './crypto';
+import { getOrCreateAESKey, encryptData, decryptData } from './crypto';
 
 const DB_NAME = 'SmritiSetu-DB';
 const STORE_NAME = 'game-sessions';
@@ -7,8 +7,10 @@ const MEMORIES_STORE = 'memories';
 
 export interface FamilyMemory {
   id?: number;
-  name: string;
-  image: string; // Base64 data URL
+  name?: string;
+  image?: string;
+  encryptedData?: string;
+  iv?: string;
   timestamp: number;
 }
 
@@ -52,12 +54,9 @@ export async function initDB() {
 
 export async function saveSessionLocally(data: Omit<GameSession, 'timestamp' | 'syncStatus'>) {
   const db = await initDB();
-  const pin = typeof window !== 'undefined' ? localStorage.getItem('app_pin') : null;
-  const salt = typeof window !== 'undefined' ? localStorage.getItem('app_salt') : null;
-  
-  if (pin && salt) {
+  if (typeof window !== 'undefined') {
     try {
-      const key = await deriveKey(pin, salt);
+      const key = await getOrCreateAESKey();
       const { cipherText, iv } = await encryptData(data, key);
       await db.add(STORE_NAME, { 
         encryptedData: cipherText, 
@@ -77,19 +76,14 @@ export async function saveSessionLocally(data: Omit<GameSession, 'timestamp' | '
 
 async function decryptSessionRecord(item: unknown): Promise<GameSession | null> {
   const record = item as { encryptedData?: string; iv?: string; id?: number; timestamp?: number; syncStatus?: string };
-  if (record.encryptedData && record.iv) {
-    const pin = typeof window !== 'undefined' ? localStorage.getItem('app_pin') : null;
-    const salt = typeof window !== 'undefined' ? localStorage.getItem('app_salt') : null;
-    if (pin && salt) {
-      try {
-        const key = await deriveKey(pin, salt);
-        const dec = await decryptData(record.encryptedData, record.iv, key);
-        return { ...(dec as GameSession), id: record.id, timestamp: record.timestamp!, syncStatus: record.syncStatus as any };
-      } catch (e) {
-        return null; // Skip gracefully on decryption failure
-      }
+  if (record.encryptedData && record.iv && typeof window !== 'undefined') {
+    try {
+      const key = await getOrCreateAESKey();
+      const dec = await decryptData(record.encryptedData, record.iv, key);
+      return { ...(dec as GameSession), id: record.id, timestamp: record.timestamp!, syncStatus: record.syncStatus as 'pending' | 'synced' | 'failed' };
+    } catch (e) {
+      return null; // Skip gracefully on decryption failure
     }
-    return null; // Cannot decrypt without pin
   }
   return item as GameSession; // Unencrypted fallback
 }
@@ -147,12 +141,38 @@ export async function processSyncQueue() {
 
 export async function saveMemory(data: { name: string; image: string }) {
   const db = await initDB();
+  if (typeof window !== 'undefined') {
+    try {
+      const key = await getOrCreateAESKey();
+      const { cipherText, iv } = await encryptData(data, key);
+      await db.add(MEMORIES_STORE, { encryptedData: cipherText, iv, timestamp: Date.now() });
+      return;
+    } catch (e) {
+      console.error('Encryption failed', e);
+    }
+  }
   await db.add(MEMORIES_STORE, { ...data, timestamp: Date.now() });
+}
+
+async function decryptMemoryRecord(item: unknown): Promise<FamilyMemory | null> {
+  const record = item as FamilyMemory;
+  if (record.encryptedData && record.iv && typeof window !== 'undefined') {
+    try {
+      const key = await getOrCreateAESKey();
+      const dec = await decryptData(record.encryptedData, record.iv, key);
+      return { ...(dec as FamilyMemory), id: record.id, timestamp: record.timestamp };
+    } catch (e) {
+      return null;
+    }
+  }
+  return record;
 }
 
 export async function getMemories(): Promise<FamilyMemory[]> {
   const db = await initDB();
-  return db.getAll(MEMORIES_STORE);
+  const all = await db.getAll(MEMORIES_STORE);
+  const decrypted = await Promise.all(all.map(decryptMemoryRecord));
+  return decrypted.filter(Boolean) as FamilyMemory[];
 }
 
 export async function deleteMemory(id: number) {
