@@ -1,4 +1,5 @@
 import { openDB } from 'idb';
+import { deriveKey, encryptData, decryptData } from './crypto';
 
 const DB_NAME = 'SmritiSetu-DB';
 const STORE_NAME = 'game-sessions';
@@ -12,6 +13,8 @@ export interface FamilyMemory {
 }
 
 export interface GameSession {
+  encryptedData?: string;
+  iv?: string;
   id?: number;
   game: string;
   matches: number;
@@ -49,18 +52,60 @@ export async function initDB() {
 
 export async function saveSessionLocally(data: Omit<GameSession, 'timestamp' | 'syncStatus'>) {
   const db = await initDB();
+  const pin = typeof window !== 'undefined' ? localStorage.getItem('app_pin') : null;
+  const salt = typeof window !== 'undefined' ? localStorage.getItem('app_salt') : null;
+  
+  if (pin && salt) {
+    try {
+      const key = await deriveKey(pin, salt);
+      const { cipherText, iv } = await encryptData(data, key);
+      await db.add(STORE_NAME, { 
+        encryptedData: cipherText, 
+        iv, 
+        timestamp: Date.now(), 
+        syncStatus: 'pending' 
+      });
+      return;
+    } catch (e) {
+      console.error('Encryption failed', e);
+    }
+  }
+  
   await db.add(STORE_NAME, { ...data, timestamp: Date.now(), syncStatus: 'pending' });
+}
+
+
+async function decryptSessionRecord(item: unknown): Promise<GameSession | null> {
+  const record = item as { encryptedData?: string; iv?: string; id?: number; timestamp?: number; syncStatus?: string };
+  if (record.encryptedData && record.iv) {
+    const pin = typeof window !== 'undefined' ? localStorage.getItem('app_pin') : null;
+    const salt = typeof window !== 'undefined' ? localStorage.getItem('app_salt') : null;
+    if (pin && salt) {
+      try {
+        const key = await deriveKey(pin, salt);
+        const dec = await decryptData(record.encryptedData, record.iv, key);
+        return { ...(dec as GameSession), id: record.id, timestamp: record.timestamp!, syncStatus: record.syncStatus as any };
+      } catch (e) {
+        return null; // Skip gracefully on decryption failure
+      }
+    }
+    return null; // Cannot decrypt without pin
+  }
+  return item as GameSession; // Unencrypted fallback
 }
 
 export async function getPendingSessions(): Promise<GameSession[]> {
   const db = await initDB();
-  return db.getAllFromIndex(STORE_NAME, 'syncStatus', 'pending');
+  const raw = await db.getAllFromIndex(STORE_NAME, 'syncStatus', 'pending');
+  const decrypted = await Promise.all(raw.map(decryptSessionRecord));
+  return decrypted.filter(Boolean) as GameSession[];
 }
 
 export async function getAllSessions(): Promise<GameSession[]> {
   const db = await initDB();
   const all = await db.getAll(STORE_NAME);
-  return all.sort((a, b) => a.timestamp - b.timestamp);
+  const decrypted = await Promise.all(all.map(decryptSessionRecord));
+  return (decrypted.filter(Boolean) as GameSession[]).sort((a, b) => a.timestamp - b.timestamp);
 }
 
 export async function processSyncQueue() {

@@ -99,10 +99,7 @@ export const translations: Record<Language, Record<string, string>> = {
     photoName: "Person's Name",
     saveMemory: "Save Memory",
     noMemories: "No memories added yet.",
-    relaySync: "Relay Sync Endpoint",
-    syncStatus: "Sync Status",
-    syncPending: "Pending Offline Sync",
-    syncSecure: "Secure Encrypted Push",
+    syncPending: "Pending Sync",
   },
   Assamese: {
     // Shared
@@ -202,10 +199,7 @@ export const translations: Record<Language, Record<string, string>> = {
     photoName: "ব্যক্তিৰ নাম",
     saveMemory: "স্মৃতি সংৰক্ষণ কৰক",
     noMemories: "এতিয়ালৈ কোনো স্মৃতি যোগ কৰা হোৱা নাই।",
-    relaySync: "ৰিলে চিংক এণ্ডপইণ্ট",
-    syncStatus: "চিংকৰ স্থিতি",
-    syncPending: "অফলাইন চিংক বাকী আছে",
-    syncSecure: "সুৰক্ষিত এনক্ৰিপ্ট কৰা পুশ",
+    syncPending: "Pending Sync",
   },
   Bengali: {
     // Shared
@@ -305,10 +299,7 @@ export const translations: Record<Language, Record<string, string>> = {
     photoName: "ব্যক্তির নাম",
     saveMemory: "স্মৃতি সংরক্ষণ করুন",
     noMemories: "এখনও কোনও স্মৃতি যোগ করা হয়নি।",
-    relaySync: "রিলে সিঙ্ক এন্ডপয়েন্ট",
-    syncStatus: "সিঙ্ক স্ট্যাটাস",
-    syncPending: "অফলাইন সিঙ্ক বাকি আছে",
-    syncSecure: "সুরক্ষিত এনক্রিপ্ট করা পুশ",
+    syncPending: "Pending Sync",
   },
   Hindi: {
     // Shared
@@ -408,9 +399,6 @@ export const translations: Record<Language, Record<string, string>> = {
     photoName: "व्यक्ति का नाम",
     saveMemory: "स्मृति सहेजें",
     noMemories: "अभी तक कोई यादें नहीं जोड़ी गईं।",
-    relaySync: "रिले सिंक एंडपॉइंट",
-    syncStatus: "सिंक स्थिति",
-    syncPending: "ऑफ़लाइन सिंक लंबित",
-    syncSecure: "सुरक्षित एन्क्रिप्टेड पुश",
+    syncPending: "Pending Sync",
   }
 };

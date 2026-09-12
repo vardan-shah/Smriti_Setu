@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { Home, Clock, TrendingDown, TrendingUp, Activity, AlertOctagon, CheckCircle, Calendar, Upload, Image as ImageIcon, Database, Lock, X } from "lucide-react";
+import { Home, Clock, TrendingDown, TrendingUp, Activity, AlertOctagon, Upload, Image as ImageIcon, Database, X, Lock } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { getAllSessions, GameSession, saveMemory, getMemories, FamilyMemory, getPendingSessions, deleteMemory } from "../utils/db";
 import { computeArmValues, DIFFICULTY_ARMS } from "../../lib/adaptiveDifficulty";
+import { hashPin } from "../utils/crypto";
 import { translations, Language } from "../../i18n/translations";
 import { useDocumentLanguage } from "../../i18n/language";
 
@@ -25,9 +26,28 @@ function DashboardContent() {
   const [newMemImage, setNewMemImage] = useState("");
   const [pendingSyncCount, setPendingSyncCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [pinMode, setPinMode] = useState<'setup' | 'login' | 'unlocked'>('unlocked');
+  const [pinInput, setPinInput] = useState("");
+  const [pinError, setPinError] = useState("");
 
   useEffect(() => {
     async function loadData() {
+      const storedHash = localStorage.getItem('app_pin_hash');
+      if (!storedHash) {
+        setPinMode('setup');
+        setLoading(false);
+        return;
+      }
+      
+      const storedPin = localStorage.getItem('app_pin');
+      if (!storedPin) {
+        setPinMode('login');
+        setLoading(false);
+        return;
+      }
+      
+      // Assume unlocked if plain pin is in memory
+      setPinMode('unlocked');
       try {
         const data = await getAllSessions();
         setSessions(data);
@@ -112,6 +132,92 @@ function DashboardContent() {
     const mems = await getMemories();
     setMemories(mems);
   };
+
+  const handlePinSubmit = async () => {
+    if (pinInput.length < 4) {
+      setPinError("PIN must be at least 4 digits");
+      return;
+    }
+    
+    if (pinMode === 'setup') {
+      const hash = await hashPin(pinInput);
+      const salt = Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b => b.toString(16).padStart(2, '0')).join('');
+      localStorage.setItem('app_pin_hash', hash);
+      localStorage.setItem('app_salt', salt);
+      localStorage.setItem('app_pin', pinInput);
+      setPinMode('unlocked');
+      setLoading(true);
+      
+      // Reload data
+      try {
+        const data = await getAllSessions();
+        setSessions(data);
+        const mems = await getMemories();
+        setMemories(mems);
+        const pending = await getPendingSessions();
+        setPendingSyncCount(pending.length);
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      const hash = await hashPin(pinInput);
+      const storedHash = localStorage.getItem('app_pin_hash');
+      if (hash === storedHash) {
+        localStorage.setItem('app_pin', pinInput); // Store for this session
+        setPinMode('unlocked');
+        setPinError("");
+        setLoading(true);
+        // Reload data
+        try {
+          const data = await getAllSessions();
+          setSessions(data);
+          const mems = await getMemories();
+          setMemories(mems);
+          const pending = await getPendingSessions();
+          setPendingSyncCount(pending.length);
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        setPinError("Incorrect PIN");
+      }
+    }
+  };
+
+  if (pinMode !== 'unlocked') {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6">
+        <div className="bg-white p-10 rounded-3xl shadow-lg border border-slate-100 max-w-md w-full text-center">
+          <Lock className="w-12 h-12 text-slate-400 mx-auto mb-6" />
+          <h1 className="text-2xl font-bold text-slate-800 mb-2">
+            {pinMode === 'setup' ? "Set Dashboard PIN" : "Enter Dashboard PIN"}
+          </h1>
+          <p className="text-slate-500 mb-8">
+            {pinMode === 'setup' ? "Set a 4-6 digit PIN to encrypt and protect this dashboard." : "Enter your PIN to decrypt and access the dashboard."}
+          </p>
+          
+          <input 
+            type="password" 
+            pattern="[0-9]*" 
+            inputMode="numeric"
+            maxLength={6}
+            value={pinInput}
+            onChange={(e) => setPinInput(e.target.value)}
+            className="w-full text-center text-3xl tracking-[1em] font-mono p-4 border border-slate-200 rounded-xl mb-4 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          />
+          
+          {pinError && <p className="text-rose-500 text-sm font-medium mb-4">{pinError}</p>}
+          
+          <button 
+            onClick={handlePinSubmit}
+            className="w-full py-4 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 active:scale-95 transition-all"
+          >
+            {pinMode === 'setup' ? "Set PIN & Encrypt" : "Unlock"}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 p-6 md:p-10 font-sans">
@@ -279,7 +385,7 @@ function DashboardContent() {
                 <Database className="w-12 h-12 text-slate-300 mb-4" />
                 <h2 className="text-2xl font-bold text-slate-800 mb-2">Local Storage</h2>
                 <p className="text-slate-500 mb-6 max-w-xs">
-                  {pendingSyncCount} session{pendingSyncCount !== 1 ? 's' : ''} stored securely on this device, waiting to be synced when connected.
+                  {pendingSyncCount} session{pendingSyncCount !== 1 ? 's' : ''} encrypted and stored on this device, waiting to be synced when connected.
                 </p>
                 <div className="w-full bg-slate-100 h-4 rounded-full overflow-hidden relative">
                    <div className="absolute inset-y-0 left-0 bg-emerald-400 w-full animate-pulse opacity-50" />
