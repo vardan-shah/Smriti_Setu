@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { openDB } from 'idb';
 import { getOrCreateAESKey, encryptData, decryptData } from './crypto';
 
@@ -241,4 +242,107 @@ export async function getMedicationAdherence(): Promise<{ adherence: number | nu
   const adherence = Math.min(100, Math.round((daysWithTap.size / daysSinceFirst) * 100));
 
   return { adherence, empty: false };
+}
+
+export async function getAllMedications(): Promise<any[]> {
+  const db = await initDB();
+  const allRaw = await db.getAll(MEDICATIONS_STORE);
+  
+  const decrypted = await Promise.all(allRaw.map(async (item) => {
+    const record = item as any;
+    if (record.encryptedData && record.iv && typeof window !== 'undefined') {
+      try {
+        const key = await getOrCreateAESKey();
+        const dec = await decryptData(record.encryptedData, record.iv, key);
+        return { ...(dec as any), id: record.id, timestamp: record.timestamp };
+      } catch {
+        return null;
+      }
+    }
+    return item;
+  }));
+
+  return decrypted.filter(Boolean);
+}
+
+
+type SyncItem = { id?: number; timestamp?: number; syncStatus?: string; [key: string]: any };
+export async function importSyncData(data: { sessions: SyncItem[], memories: SyncItem[], medications: SyncItem[] }) {
+  const db = await initDB();
+  
+  const importSessions = async (items: SyncItem[]) => {
+    for (const item of items) {
+      if (item.id) {
+        const exists = await db.get(STORE_NAME, item.id);
+        if (!exists) {
+          if (typeof window !== 'undefined') {
+             try {
+               const key = await getOrCreateAESKey();
+               const { id, timestamp, syncStatus, ...payload } = item;
+               const { cipherText, iv } = await encryptData(payload, key);
+               await db.add(STORE_NAME, { id, timestamp, syncStatus: syncStatus || 'synced', encryptedData: cipherText, iv });
+             } catch {
+               await db.add(STORE_NAME, item);
+             }
+          } else {
+            await db.add(STORE_NAME, item);
+          }
+        }
+      } else {
+        await db.add(STORE_NAME, item);
+      }
+    }
+  };
+
+  const importMemories = async (items: SyncItem[]) => {
+    for (const item of items) {
+      if (item.id) {
+        const exists = await db.get(MEMORIES_STORE, item.id);
+        if (!exists) {
+          if (typeof window !== 'undefined') {
+             try {
+               const key = await getOrCreateAESKey();
+               const { id, timestamp, ...payload } = item;
+               const { cipherText, iv } = await encryptData(payload, key);
+               await db.add(MEMORIES_STORE, { id, timestamp, encryptedData: cipherText, iv });
+             } catch {
+               await db.add(MEMORIES_STORE, item);
+             }
+          } else {
+            await db.add(MEMORIES_STORE, item);
+          }
+        }
+      } else {
+        await db.add(MEMORIES_STORE, item);
+      }
+    }
+  };
+
+  const importMedications = async (items: SyncItem[]) => {
+    for (const item of items) {
+      if (item.id) {
+        const exists = await db.get(MEDICATIONS_STORE, item.id);
+        if (!exists) {
+          if (typeof window !== 'undefined') {
+             try {
+               const key = await getOrCreateAESKey();
+               const { id, timestamp, ...payload } = item;
+               const { cipherText, iv } = await encryptData(payload, key);
+               await db.add(MEDICATIONS_STORE, { id, timestamp, encryptedData: cipherText, iv });
+             } catch {
+               await db.add(MEDICATIONS_STORE, item);
+             }
+          } else {
+            await db.add(MEDICATIONS_STORE, item);
+          }
+        }
+      } else {
+        await db.add(MEDICATIONS_STORE, item);
+      }
+    }
+  };
+
+  await importSessions(data.sessions || []);
+  await importMemories(data.memories || []);
+  await importMedications(data.medications || []);
 }

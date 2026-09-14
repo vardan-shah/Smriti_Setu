@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { Home, Clock, TrendingDown, TrendingUp, Activity, AlertOctagon, Upload, Image as ImageIcon, Database, X, Lock, CheckCircle } from "lucide-react";
+import { Home, Clock, TrendingDown, TrendingUp, Activity, AlertOctagon, Upload, Download, FileUp, Image as ImageIcon, Database, X, Lock, CheckCircle } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
-import { getAllSessions, GameSession, saveMemory, getMemories, FamilyMemory, getPendingSessions, deleteMemory, getMedicationAdherence } from "../utils/db";
+import { getAllSessions, GameSession, saveMemory, getMemories, FamilyMemory, getPendingSessions, deleteMemory, getMedicationAdherence, getAllMedications, importSyncData } from "../utils/db";
+import { encryptData, decryptData, getOrCreateAESKey } from "../utils/crypto";
 import { computeArmValues, DIFFICULTY_ARMS } from "../../lib/adaptiveDifficulty";
 import { hashPin } from "../utils/crypto";
 import { translations, Language } from "../../i18n/translations";
@@ -26,6 +27,8 @@ function DashboardContent() {
   const [newMemImage, setNewMemImage] = useState("");
   const [pendingSyncCount, setPendingSyncCount] = useState(0);
   const [adherenceData, setAdherenceData] = useState<{ adherence: number | null, empty: boolean }>({ adherence: null, empty: true });
+  const [syncMessage, setSyncMessage] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(true);
   const [pinMode, setPinMode] = useState<'checking' | 'setup' | 'login' | 'unlocked'>('checking');
   const [pinInput, setPinInput] = useState("");
@@ -143,9 +146,8 @@ function DashboardContent() {
     
     if (pinMode === 'setup') {
       const hash = await hashPin(pinInput);
-      const salt = Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b => b.toString(16).padStart(2, '0')).join('');
       localStorage.setItem('app_pin_hash', hash);
-      localStorage.setItem('app_salt', salt);
+      
       sessionStorage.setItem('dashboard_unlocked', 'true');
       setPinMode('unlocked');
       setLoading(true);
@@ -192,6 +194,71 @@ function DashboardContent() {
         setPinError("Incorrect PIN");
       }
     }
+  };
+
+
+  const handleExport = async () => {
+    try {
+      const sessionsData = await getAllSessions();
+      const memoriesData = await getMemories();
+      const medicationsData = await getAllMedications();
+      
+      const payload = { sessions: sessionsData, memories: memoriesData, medications: medicationsData };
+      const key = await getOrCreateAESKey();
+      const encrypted = await encryptData(payload, key);
+      
+      const blob = new Blob([JSON.stringify(encrypted)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `smriti-sync-${Date.now()}.smriti`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setSyncMessage("Export successful!");
+      setTimeout(() => setSyncMessage(""), 3000);
+    } catch (e) {
+      console.error(e);
+      setSyncMessage("Export failed.");
+    }
+  };
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    try {
+      const text = await file.text();
+      const encrypted = JSON.parse(text);
+      
+      if (!encrypted.cipherText || !encrypted.iv) {
+        setSyncMessage("Invalid sync file format.");
+        return;
+      }
+      
+      const key = await getOrCreateAESKey();
+      const decrypted = await decryptData(encrypted.cipherText, encrypted.iv, key);
+      
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await importSyncData(decrypted as { sessions: any[], memories: any[], medications: any[] });
+      
+      // Reload UI
+      const data = await getAllSessions();
+      setSessions(data);
+      const mems = await getMemories();
+      setMemories(mems);
+      const pending = await getPendingSessions();
+      setPendingSyncCount(pending.length);
+      const adherence = await getMedicationAdherence();
+      setAdherenceData(adherence);
+      
+      setSyncMessage("Import successful!");
+      setTimeout(() => setSyncMessage(""), 3000);
+    } catch (err) {
+      console.error(err);
+      setSyncMessage("Decryption failed. Wrong key or corrupted file.");
+    }
+    
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   if (pinMode === 'checking') {
@@ -411,12 +478,29 @@ function DashboardContent() {
                 <p className="text-slate-500 mb-6 max-w-xs">
                   {pendingSyncCount} session{pendingSyncCount !== 1 ? 's' : ''} encrypted and stored on this device, waiting to be synced when connected.
                 </p>
-                <div className="w-full bg-slate-100 h-4 rounded-full overflow-hidden relative">
+                <div className="w-full bg-slate-100 h-4 rounded-full overflow-hidden relative mb-6">
                    <div className="absolute inset-y-0 left-0 bg-emerald-400 w-full animate-pulse opacity-50" />
                    <div className="absolute inset-0 flex items-center justify-center">
                      <span className="text-[10px] font-black text-emerald-800 uppercase tracking-widest">{t.syncPending || "Pending Sync"}</span>
                    </div>
                 </div>
+                
+                <div className="w-full flex gap-3">
+                  <button 
+                    onClick={handleExport}
+                    className="flex-1 flex items-center justify-center gap-2 py-3 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-slate-800 transition-colors"
+                  >
+                    <Download className="w-4 h-4" /> Export
+                  </button>
+                  <button 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex-1 flex items-center justify-center gap-2 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-50 transition-colors"
+                  >
+                    <FileUp className="w-4 h-4" /> Import
+                  </button>
+                  <input type="file" accept=".smriti,.json" ref={fileInputRef} onChange={handleImport} className="hidden" />
+                </div>
+                {syncMessage && <p className="text-xs font-medium text-emerald-600 mt-4 animate-in fade-in">{syncMessage}</p>}
               </div>
               {/* Medication Adherence */}
               <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-center items-center text-center">
