@@ -30,7 +30,7 @@ export async function playVoicePrompt(
       audio.onerror = () => triggerFallback();
       await audio.play();
       return;
-    } catch (e) {
+    } catch {
       triggerFallback();
       return;
     }

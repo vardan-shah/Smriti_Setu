@@ -69,8 +69,8 @@ export async function saveSessionLocally(data: Omit<GameSession, 'timestamp' | '
         syncStatus: 'pending' 
       });
       return;
-    } catch (e) {
-      console.error('Encryption failed', e);
+    } catch {
+      ;
     }
   }
   
@@ -85,7 +85,7 @@ async function decryptSessionRecord(item: unknown): Promise<GameSession | null> 
       const key = await getOrCreateAESKey();
       const dec = await decryptData(record.encryptedData, record.iv, key);
       return { ...(dec as GameSession), id: record.id, timestamp: record.timestamp!, syncStatus: record.syncStatus as 'pending' | 'synced' | 'failed' };
-    } catch (e) {
+    } catch {
       return null; // Skip gracefully on decryption failure
     }
   }
@@ -130,7 +130,7 @@ export async function processSyncQueue() {
         await tx.store.put(item);
       }
       await tx.done;
-    } catch (_) {
+    } catch {
       const tx = db.transaction(STORE_NAME, 'readwrite');
       const item = await tx.store.get(session.id!);
       if (item) {
@@ -151,8 +151,8 @@ export async function saveMemory(data: { name: string; image: string }) {
       const { cipherText, iv } = await encryptData(data, key);
       await db.add(MEMORIES_STORE, { encryptedData: cipherText, iv, timestamp: Date.now() });
       return;
-    } catch (e) {
-      console.error('Encryption failed', e);
+    } catch {
+      ;
     }
   }
   await db.add(MEMORIES_STORE, { ...data, timestamp: Date.now() });
@@ -165,7 +165,7 @@ async function decryptMemoryRecord(item: unknown): Promise<FamilyMemory | null> 
       const key = await getOrCreateAESKey();
       const dec = await decryptData(record.encryptedData, record.iv, key);
       return { ...(dec as FamilyMemory), id: record.id, timestamp: record.timestamp };
-    } catch (e) {
+    } catch {
       return null;
     }
   }
@@ -196,8 +196,8 @@ export async function logMedicationTap() {
       const { cipherText, iv } = await encryptData(data, key);
       await db.add(MEDICATIONS_STORE, { encryptedData: cipherText, iv, timestamp });
       return;
-    } catch (e) {
-      console.error('Encryption failed', e);
+    } catch {
+      ;
     }
   }
   await db.add(MEDICATIONS_STORE, { timestamp });
@@ -214,7 +214,7 @@ export async function getMedicationAdherence(): Promise<{ adherence: number | nu
         const key = await getOrCreateAESKey();
         const dec = await decryptData(record.encryptedData, record.iv, key);
         return { ...(dec as { timestamp: number; type: string }), id: record.id, timestamp: record.timestamp };
-      } catch (e) {
+      } catch {
         return null;
       }
     }

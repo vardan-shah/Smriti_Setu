@@ -27,7 +27,7 @@ function DashboardContent() {
   const [pendingSyncCount, setPendingSyncCount] = useState(0);
   const [adherenceData, setAdherenceData] = useState<{ adherence: number | null, empty: boolean }>({ adherence: null, empty: true });
   const [loading, setLoading] = useState(true);
-  const [pinMode, setPinMode] = useState<'setup' | 'login' | 'unlocked'>('unlocked');
+  const [pinMode, setPinMode] = useState<'checking' | 'setup' | 'login' | 'unlocked'>('checking');
   const [pinInput, setPinInput] = useState("");
   const [pinError, setPinError] = useState("");
 
@@ -85,25 +85,24 @@ function DashboardContent() {
   let anomalyDetected = false;
   let anomalyMessage = "";
 
-  if (recentSessions.length >= 4) {
+  if (recentSessions.length >= 6) {
+    const baselineSessions = recentSessions.slice(0, 3);
     const latest3 = recentSessions.slice(-3);
-    const previous = recentSessions.slice(0, -3);
     
+    const baselineAccuracy = baselineSessions.reduce((a, b) => a + (b.accuracy || 0), 0) / baselineSessions.length;
     const avgRecentAccuracy = latest3.reduce((a, b) => a + (b.accuracy || 0), 0) / latest3.length;
-    const avgPastAccuracy = previous.reduce((a, b) => a + (b.accuracy || 0), 0) / previous.length;
     
-    if (avgPastAccuracy - avgRecentAccuracy >= 20) {
+    if (baselineAccuracy - avgRecentAccuracy >= 15) {
       anomalyDetected = true;
-      anomalyMessage = t.cognitiveDeclineAlert.replace('{diff}', (avgPastAccuracy - avgRecentAccuracy).toFixed(1));
-    }
-
-    const sessionsWithBiomarkers = latest3.filter(s => s.biomarkers);
-    const recentHesitation = sessionsWithBiomarkers.length > 0 
-      ? sessionsWithBiomarkers.reduce((a, b) => a + (b.biomarkers?.hesitationMs || 0), 0) / sessionsWithBiomarkers.length 
-      : 0;
-    if (recentHesitation > 8000) { 
-      anomalyDetected = true;
-      anomalyMessage = t.biomarkerAnomalyAlert.replace('{time}', (recentHesitation / 1000).toFixed(1));
+      anomalyMessage = t.cognitiveDeclineAlert.replace('{diff}', (baselineAccuracy - avgRecentAccuracy).toFixed(1));
+    } else {
+      const baselineHesitation = baselineSessions.filter(s => s.biomarkers).reduce((a, b) => a + (b.biomarkers?.hesitationMs || 0), 0) / (baselineSessions.filter(s => s.biomarkers).length || 1);
+      const recentHesitation = latest3.filter(s => s.biomarkers).reduce((a, b) => a + (b.biomarkers?.hesitationMs || 0), 0) / (latest3.filter(s => s.biomarkers).length || 1);
+      
+      if (recentHesitation - baselineHesitation > 3000) {
+        anomalyDetected = true;
+        anomalyMessage = t.biomarkerAnomalyAlert.replace('{time}', (recentHesitation / 1000).toFixed(1));
+      }
     }
   }
 
@@ -194,6 +193,14 @@ function DashboardContent() {
       }
     }
   };
+
+  if (pinMode === 'checking') {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+        <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   if (pinMode !== 'unlocked') {
     return (

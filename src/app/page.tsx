@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { Brain, LineChart, Globe } from "lucide-react";
 import { useState } from "react";
 import { translations, Language } from "../i18n/translations";

@@ -64,7 +64,7 @@ function PatientContent() {
 
   // Initialize strictly with unshuffled cards to prevent SSR hydration mismatch.
   const [cards, setCards] = useState<CardType[]>(() => 
-    [...CARD_POOL.slice(0, 6), ...CARD_POOL.slice(0, 6)].map((card, idx) => ({ ...card, uniqueId: idx }))
+    [...CARD_POOL.slice(0, 6), ...CARD_POOL.slice(0, 6)].map((card, idx) => ({ ...(card as CardType), uniqueId: idx }))
   );
   
   const [flipped, setFlipped] = useState<number[]>([]);
@@ -93,6 +93,7 @@ function PatientContent() {
 
     // Transform custom memories into valid cards (mocking an icon component with an img tag)
     const memCards = customMemories.map((m) => ({
+      // eslint-disable-next-line @next/next/no-img-element
       icon: (props: React.ImgHTMLAttributes<HTMLImageElement>) => <img src={m.image} alt={m.name} className="w-12 h-12 object-cover rounded-full" {...props} />,
       key: `mem_${m.id}`,
       color: "bg-purple-100 text-purple-700",
@@ -100,10 +101,10 @@ function PatientContent() {
     }));
 
     // Inject custom memories first, then fill with default CARD_POOL
-    const combinedPool = [...memCards, ...CARD_POOL];
+    const combinedPool = [...memCards, ...shuffleArray(CARD_POOL)];
     const pool = combinedPool.slice(0, Math.min(diffToUse, combinedPool.length));
     
-    setCards([...pool, ...pool].sort(() => Math.random() - 0.5).map((card, idx) => ({ ...card, uniqueId: idx })));
+    setCards(shuffleArray([...pool, ...pool]).map((card: unknown, idx: number) => ({ ...(card as CardType), uniqueId: idx })));
     setGamePhase('playing');
     setFlipped([]);
     setMatched([]);
@@ -460,4 +461,13 @@ export default function PatientView() {
       <PatientContent />
     </Suspense>
   );
+}
+
+function shuffleArray<T>(array: T[]): T[] {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
 }
